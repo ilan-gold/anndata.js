@@ -7,10 +7,14 @@ import {
 import * as zarr from "zarrita";
 import SparseArray from "./sparse_array.js";
 import {
+  AxisKeyTypes,
+  AxisKeys,
   type FullSelection,
   type Slice,
   type UIntType,
 } from "./types.js";
+import AxisArrays from "./axis_arrays.js";
+import AnnData from "./anndata.js";
 
 const V2_STRING_REGEX = /v2:([US])(\d+)/;
 
@@ -256,4 +260,34 @@ export async function readSparse<
     kind: "array",
   })) as zarr.Array<D, S>;
   return new SparseArray(indices, indptr, data, shape, format);
+}
+
+
+export async function readZarr(path: string | Readable) {
+  let root: zarr.Group<Readable>;
+  if (typeof path === "string") {
+    const store = await zarr.tryWithConsolidated(new zarr.FetchStore(path));
+    root = await zarr.open(store, { kind: "group" });
+  } else {
+    root = await zarr.open(path, { kind: "group" });
+  }
+
+  const adataInit = {} as AxisKeyTypes<Readable, zarr.NumberDataType>;
+  await Promise.all(
+    AxisKeys.map(async (k) => {
+      if (k === "X") {
+        if (await has(root, k)) {
+          const x_elem = await zarr.open(root.resolve("X"));
+          if (x_elem instanceof zarr.Group) {
+            adataInit[k] = await readSparse(x_elem);
+          } else {
+            adataInit[k] = x_elem as zarr.Array<zarr.NumberDataType>;
+          }
+        }
+      } else {
+        adataInit[k] = new AxisArrays<Readable>(root, k);
+      }
+    }),
+  );
+  return new AnnData(adataInit);
 }
