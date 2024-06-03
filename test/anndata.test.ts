@@ -32,12 +32,12 @@ const N_OBS = 50;
 const N_VAR = 25;
 
 function test_io(
-  fixture: [string, string][],
+  fixture: string[][],
   type: "dense" | "csc" | "csr" | "no-X",
-  version: number,
+  version: string,
 ) {
   describe(`${type} X v${version}`, async () => {
-    const store = createStoreFromMapContents(fixture);
+    const store = createStoreFromMapContents(fixture as [string, string][]);
     const adata = await readZarr(store as Readable);
     it("obs column", async () => {
       const ids = await adata.obs.get("categorical");
@@ -171,38 +171,38 @@ function test_io(
 // }
 
 describe("AnnData i/o", () => {
-  Object.entries({
+  for (const [version, fixture] of Object.entries({
     0.7: anndata_0_7_DenseFixture,
     0.8: anndata_0_8_DenseFixture,
     0.9: anndata_0_9_DenseFixture,
     "0.10": anndata_0_10_DenseFixture,
-  }).forEach(([version, fixture]) => {
+  })) {
     test_io(fixture, "dense", version);
-  });
-  Object.entries({
+  }
+  for (const [version, fixture] of Object.entries({
     0.7: anndata_0_7_CscFixture,
     0.8: anndata_0_8_CscFixture,
     0.9: anndata_0_9_CscFixture,
     "0.10": anndata_0_10_CscFixture,
-  }).forEach(([version, fixture]) => {
+  })) {
     test_io(fixture, "csc", version);
-  });
-  Object.entries({
+  }
+  for (const [version, fixture] of Object.entries({
     0.7: anndata_0_7_CsrFixture,
     0.8: anndata_0_8_CsrFixture,
     0.9: anndata_0_9_CsrFixture,
     "0.10": anndata_0_10_CsrFixture,
-  }).forEach(([version, fixture]) => {
+  })) {
     test_io(fixture, "csr", version);
-  });
-  Object.entries({
+  }
+  for (const [version, fixture] of Object.entries({
     0.7: anndata_0_7_NoX,
     0.8: anndata_0_8_NoX,
     0.9: anndata_0_9_NoX,
     "0.10": anndata_0_10_NoX,
-  }).forEach(([version, fixture]) => {
+  })) {
     test_io(fixture, "no-X", version);
-  });
+  }
 });
 
 // TODO(ilan-gold): Figure out why making the roundtrip is not reading in any data?

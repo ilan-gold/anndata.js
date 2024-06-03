@@ -95,7 +95,7 @@ function generateDiagonalSparseMatrix(
 }
 
 function getBufferElementType(buffer: ArrayBufferView): zarr.NumberDataType {
-	const name = (buffer as any).__proto__.constructor.name;
+	const name = buffer.constructor.name;
 	switch (name) {
 		case "Int8Array":
 			return "int8";
@@ -118,7 +118,7 @@ function getBufferElementType(buffer: ArrayBufferView): zarr.NumberDataType {
 
 // Both functions generate matrices whose diagonal is the row number, missing the middle row (to ensure that we are testing the axis skipping ability of sparse matrices)
 async function genSparse(
-	grp: zarr.Group<Map<any, any>>,
+	grp: zarr.Group<Map<string, Uint8Array>>,
 	shape: number[],
 	type: "csc" | "csr",
 ) {
@@ -154,7 +154,10 @@ async function genSparse(
 	);
 }
 
-async function genDense(grp: zarr.Group<Map<any, any>>, shape: number[]) {
+async function genDense(
+	grp: zarr.Group<Map<string, Uint8Array>>,
+	shape: number[],
+) {
 	const arr = await zarr.create(grp, {
 		shape,
 		chunk_shape: shape,
@@ -182,7 +185,7 @@ async function genDense(grp: zarr.Group<Map<any, any>>, shape: number[]) {
 }
 
 async function genCategorical(
-	grp: zarr.Group<Map<any, any>>,
+	grp: zarr.Group<Map<string, Uint8Array>>,
 	length: number,
 	numCategories: number,
 ) {
@@ -194,7 +197,7 @@ async function genCategorical(
 	Array.from(new Array(numCategories).keys())
 		.map((k) => `cat_${k}`)
 		.forEach((val, ind) => categories.set(ind, val));
-	grp.attrs.encodingType = "categorical";
+	grp.attrs["encoding-type"] = "categorical";
 	const codesArr = await zarr.create(grp, {
 		shape: [length],
 		chunk_shape: [length],
@@ -234,7 +237,7 @@ async function genCategorical(
 }
 
 async function genIndex(
-	grp: zarr.Group<Map<any, any>>,
+	grp: zarr.Group<Map<string, Uint8Array>>,
 	length: number,
 	axis: "obs" | "var",
 	indexKey: string,
@@ -273,9 +276,12 @@ async function genAnnData(
 	n_obs: number,
 	n_var: number,
 	X_type?: "csc" | "csr" | "dense",
-): Promise<AnnData<Map<any, any>, zarr.NumberDataType>> {
+): Promise<AnnData<Map<string, Uint8Array>, zarr.NumberDataType>> {
 	const shape = [n_obs, n_var];
-	const adataInit = {} as AxisKeyTypes<Map<any, any>, zarr.NumberDataType>;
+	const adataInit = {} as AxisKeyTypes<
+		Map<string, Uint8Array>,
+		zarr.NumberDataType
+	>;
 	const root = zarr.root(new Map());
 	const grp = await zarr.create(root);
 	const mkeys = ["obsm", "varm"];
@@ -287,9 +293,9 @@ async function genAnnData(
 				if (keys.includes(key)) {
 					const X = await zarr.create(grp.resolve(key));
 					if (X_type === "dense") {
-						adataInit.X = await genDense(X, shape);
+						adataInit[key] = await genDense(X, shape);
 					} else if (X_type === "csc" || X_type === "csr") {
-						adataInit.X = await genSparse(X, shape, X_type);
+						adataInit[key] = await genSparse(X, shape, X_type);
 					} else {
 						throw new Error(
 							`You must specify a valid type for X, found ${X_type}`,

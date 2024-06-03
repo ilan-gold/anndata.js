@@ -10,7 +10,7 @@ class IndexingError {
 	}
 }
 
-function isSlice(s: any): s is Slice {
+function isSlice(s: AxisSelection): s is Slice {
 	return (s as Slice)?.stop !== undefined || (s as Slice)?.start !== undefined;
 }
 

@@ -30,12 +30,14 @@ export default class AxisArrays<S extends Readable> {
 			// categories needed for backward compat
 			const keyRoot = this.axisRoot.resolve(key);
 			const keyNode = await zarr.open(keyRoot);
-			const { categories, "encoding-type": encodingType } =
-				(await keyNode.attrs) as any;
+			const { categories, "encoding-type": encodingType } = keyNode.attrs;
 			if (categories !== undefined) {
-				const cats = await zarr.open(this.axisRoot.resolve(categories), {
-					kind: "array",
-				});
+				const cats = await zarr.open(
+					this.axisRoot.resolve(String(categories)),
+					{
+						kind: "array",
+					},
+				);
 				this.cache.set(
 					key,
 					new LazyCategoricalArray(keyNode as zarr.Array<UIntType, S>, cats),
@@ -48,7 +50,10 @@ export default class AxisArrays<S extends Readable> {
 					kind: "array",
 				})) as zarr.Array<UIntType, Readable>;
 				this.cache.set(key, new LazyCategoricalArray(codes, cats));
-			} else if (["csc_matrix", "csr_matrix"].includes(encodingType)) {
+			} else if (
+				encodingType !== undefined &&
+				["csc_matrix", "csr_matrix"].includes(String(encodingType))
+			) {
 				this.cache.set(key, await readSparse(keyNode as zarr.Group<Readable>));
 			} else {
 				this.cache.set(key, keyNode as zarr.Array<zarr.DataType, S>);
