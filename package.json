@@ -2,7 +2,6 @@
   "name": "anndata.js",
   "version": "0.0.1",
   "author": "Ilan Gold",
-  "homepage": "http://vitessce.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ilan-gold/anndata.js.git"
@@ -34,7 +33,8 @@
     "build": "tsc",
     "lint": "biome ci .",
     "fix": "biome check --apply .",
-    "fix-unsafe": "biome check  --apply-unsafe ."
+    "fix-unsafe": "biome check  --apply-unsafe .",
+    "publint": "pnpm exec publint"
   },
   "dependencies": {
     "zarrita": "0.4.0-next.12",
@@ -47,6 +47,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
     "vitest": "^0.32.2",
+    "publint": "^0.2.2",
     "typescript": "^4.9.5"
   }
 }
