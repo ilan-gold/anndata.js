@@ -137,7 +137,7 @@ function isChunk<D extends zarr.DataType>(
 	return chunkOrScalar instanceof Object && "shape" in chunkOrScalar;
 }
 
-function unwrapIf1d<D extends zarr.DataType>(
+function unwrapIf0d<D extends zarr.DataType>(
 	chunkOrScalar: zarr.Chunk<D> | zarr.Scalar<D>,
 ): zarr.Scalar<D> | zarr.Chunk<D> {
 	if (!isChunk(chunkOrScalar)) {
@@ -231,9 +231,9 @@ export async function get<
 		return { ...codes, data };
 	}
 	if (isSparseArray(array)) {
-		return unwrapIf1d(await array.get(selection));
+		return unwrapIf0d(await array.get(selection));
 	}
-	return unwrapIf1d(await zarr.get(array, selection));
+	return unwrapIf0d(await zarr.get(array, selection));
 }
 
 export async function has(root: zarr.Group<Readable>, path: string) {
