@@ -121,7 +121,7 @@ export async function readZarr<
 		AxisKeys.map(async (k) => {
 			if (k === "X" && (await has(root, k))) {
 				adataInit[k as "X"] = await readElem(root, k) as SparseArray<D> | zarr.Array<D, S>;
-			} else {
+			} else if (k != "X") {
 				adataInit[k as Exclude<AxisKey, "X">] = await readElem(root, k as Exclude<AxisKey, "X">) as AxisArrays<S>;
 			}
 		}),
