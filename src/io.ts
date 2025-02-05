@@ -107,27 +107,15 @@ const IO_FUNC_REGISTRY_WITHOUT_VERSION: { [index: string]: any } = {
 export async function readZarr<
 	S extends Readable,
 	D extends zarr.NumberDataType,
->(path: string | S): Promise<AnnData<S, D>> {
-	let root: zarr.Group<Readable>;
-	if (typeof path === "string") {
-		const store = await zarr.tryWithConsolidated(new zarr.FetchStore(path));
-		root = await zarr.open(store, { kind: "group" });
-	} else {
-		root = await zarr.open(path, { kind: "group" });
-	}
-
+>(path: S): Promise<AnnData<S, D>> {
+	const root = await zarr.open(path, { kind: "group" });
 	const adataInit = {} as AxisKeyTypes<S, D>;
 	await Promise.all(
 		AxisKeys.map(async (k) => {
 			if (k === "X" && (await has(root, k))) {
-				adataInit[k as "X"] = (await readElem(root, k)) as
-					| SparseArray<D>
-					| zarr.Array<D, S>;
+				adataInit[k] = await readElem(root, k);
 			} else if (k !== "X") {
-				adataInit[k as Exclude<AxisKey, "X">] = (await readElem(
-					root,
-					k as Exclude<AxisKey, "X">,
-				)) as AxisArrays<S>;
+				adataInit[k] = (await readElem(root, k));
 			}
 		}),
 	);
@@ -136,15 +124,11 @@ export async function readZarr<
 
 export async function readElem<
 	S extends Readable,
-	D extends zarr.DataType,
-	DN extends zarr.NumberDataType,
-	K extends UIntType,
+	D extends zarr.DataType
 >(location: zarr.Group<S>, key: Exclude<AxisKey, "X">): Promise<AxisArrays<S>>;
 export async function readElem<
 	S extends Readable,
-	D extends zarr.DataType,
 	DN extends zarr.NumberDataType,
-	K extends UIntType,
 >(
 	location: zarr.Group<S>,
 	key: "X",
