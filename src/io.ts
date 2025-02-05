@@ -115,7 +115,7 @@ export async function readZarr<
 			if (k === "X" && (await has(root, k))) {
 				adataInit[k] = await readElem(root, k);
 			} else if (k !== "X") {
-				adataInit[k] = (await readElem(root, k));
+				adataInit[k] = await readElem(root, k);
 			}
 		}),
 	);
