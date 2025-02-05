@@ -122,10 +122,10 @@ export async function readZarr<
 	return new AnnData(adataInit);
 }
 
-export async function readElem<
-	S extends Readable,
-	D extends zarr.DataType
->(location: zarr.Group<S>, key: Exclude<AxisKey, "X">): Promise<AxisArrays<S>>;
+export async function readElem<S extends Readable, D extends zarr.DataType>(
+	location: zarr.Group<S>,
+	key: Exclude<AxisKey, "X">,
+): Promise<AxisArrays<S>>;
 export async function readElem<
 	S extends Readable,
 	DN extends zarr.NumberDataType,
