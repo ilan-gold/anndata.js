@@ -120,9 +120,14 @@ export async function readZarr<
 	await Promise.all(
 		AxisKeys.map(async (k) => {
 			if (k === "X" && (await has(root, k))) {
-				adataInit[k as "X"] = await readElem(root, k) as SparseArray<D> | zarr.Array<D, S>;
-			} else if (k != "X") {
-				adataInit[k as Exclude<AxisKey, "X">] = await readElem(root, k as Exclude<AxisKey, "X">) as AxisArrays<S>;
+				adataInit[k as "X"] = (await readElem(root, k)) as
+					| SparseArray<D>
+					| zarr.Array<D, S>;
+			} else if (k !== "X") {
+				adataInit[k as Exclude<AxisKey, "X">] = (await readElem(
+					root,
+					k as Exclude<AxisKey, "X">,
+				)) as AxisArrays<S>;
 			}
 		}),
 	);
@@ -152,11 +157,7 @@ export async function readElem<
 >(
 	location: zarr.Group<S>,
 	key: string,
-): Promise<
-	| SparseArray<DN>
-	| LazyCategoricalArray<K, D, S>
-	| zarr.Array<D, S>
->
+): Promise<SparseArray<DN> | LazyCategoricalArray<K, D, S> | zarr.Array<D, S>>;
 export async function readElem<
 	S extends Readable,
 	D extends zarr.DataType,

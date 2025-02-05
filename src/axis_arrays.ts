@@ -3,7 +3,7 @@ import { has } from "./utils.js";
 
 import type { Readable } from "@zarrita/storage";
 import { readElem } from "./io.js";
-import type {  BackedArray } from "./types.js";
+import type { BackedArray } from "./types.js";
 
 export default class AxisArrays<S extends Readable> {
 	public parent: zarr.Group<S>;
