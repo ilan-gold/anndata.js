@@ -33,7 +33,7 @@ export interface AxisKeyTypes<
 	var: AxisArrays<S>;
 	obsm: AxisArrays<S>;
 	varm: AxisArrays<S>;
-	X: SparseArray<D> | zarr.Array<D> | undefined;
+	X: SparseArray<D> | zarr.Array<D, S> | undefined;
 	layers: AxisArrays<S>;
 	obsp: AxisArrays<S>;
 	varp: AxisArrays<S>;

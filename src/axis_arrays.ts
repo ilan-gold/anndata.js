@@ -1,26 +1,23 @@
 import type * as zarr from "zarrita";
-import { LazyCategoricalArray, has } from "./utils.js";
+import { has } from "./utils.js";
 
 import type { Readable } from "@zarrita/storage";
 import { readElem } from "./io.js";
-import type { AxisKey, BackedArray, UIntType } from "./types.js";
+import type {  BackedArray } from "./types.js";
 
 export default class AxisArrays<S extends Readable> {
-	public parentRoot: zarr.Group<S>;
-	public name: Exclude<AxisKey, "X">;
+	public parent: zarr.Group<S>;
+	public name: string;
 	private cache: Map<string, BackedArray>;
 
-	public constructor(
-		parentRoot: zarr.Group<S>,
-		axisKey: Exclude<AxisKey, "X">,
-	) {
-		this.name = axisKey;
-		this.parentRoot = parentRoot;
+	public constructor(parent: zarr.Group<S>, name: string) {
+		this.name = name;
+		this.parent = parent;
 		this.cache = new Map();
 	}
 
 	public get axisRoot(): zarr.Location<S> {
-		return this.parentRoot.resolve(this.name);
+		return this.parent.resolve(this.name);
 	}
 
 	public async get(key: string): Promise<BackedArray> {
@@ -28,8 +25,7 @@ export default class AxisArrays<S extends Readable> {
 			throw new Error(`${this.name} has no key: \"${key}\"`);
 		}
 		if (!this.cache.has(key)) {
-			// categories needed for backward compat
-			this.cache.set(key, await readElem(this.axisRoot, key));
+			this.cache.set(key, await readElem(this.axisRoot as zarr.Group<S>, key));
 		}
 		const val = this.cache.get(key);
 		if (val === undefined) {
@@ -41,6 +37,6 @@ export default class AxisArrays<S extends Readable> {
 	}
 
 	public async has(key: string): Promise<boolean> {
-		return has(this.parentRoot, `${this.name}/${key}`);
+		return has(this.parent, `${this.name}/${key}`);
 	}
 }
