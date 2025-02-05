@@ -1,7 +1,8 @@
-import * as zarr from "zarrita";
-import { LazyCategoricalArray, has, readSparse } from "./utils.js";
+import type * as zarr from "zarrita";
+import { LazyCategoricalArray, has } from "./utils.js";
 
 import type { Readable } from "@zarrita/storage";
+import { readElem } from "./io.js";
 import type { AxisKey, BackedArray, UIntType } from "./types.js";
 
 export default class AxisArrays<S extends Readable> {
@@ -28,36 +29,7 @@ export default class AxisArrays<S extends Readable> {
 		}
 		if (!this.cache.has(key)) {
 			// categories needed for backward compat
-			const keyRoot = this.axisRoot.resolve(key);
-			const keyNode = await zarr.open(keyRoot);
-			const { categories, "encoding-type": encodingType } = keyNode.attrs;
-			if (categories !== undefined) {
-				const cats = await zarr.open(
-					this.axisRoot.resolve(String(categories)),
-					{
-						kind: "array",
-					},
-				);
-				this.cache.set(
-					key,
-					new LazyCategoricalArray(keyNode as zarr.Array<UIntType, S>, cats),
-				);
-			} else if (encodingType === "categorical") {
-				const cats = await zarr.open(keyRoot.resolve("categories"), {
-					kind: "array",
-				});
-				const codes = (await zarr.open(keyRoot.resolve("codes"), {
-					kind: "array",
-				})) as zarr.Array<UIntType, Readable>;
-				this.cache.set(key, new LazyCategoricalArray(codes, cats));
-			} else if (
-				encodingType !== undefined &&
-				["csc_matrix", "csr_matrix"].includes(String(encodingType))
-			) {
-				this.cache.set(key, await readSparse(keyNode as zarr.Group<Readable>));
-			} else {
-				this.cache.set(key, keyNode as zarr.Array<zarr.DataType, S>);
-			}
+			this.cache.set(key, await readElem(this.axisRoot, key));
 		}
 		const val = this.cache.get(key);
 		if (val === undefined) {
