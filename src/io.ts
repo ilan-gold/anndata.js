@@ -117,9 +117,7 @@ export async function readZarr<
 	const adataInit = {} as AxisKeyTypes<S, D>;
 	await Promise.all(
 		AxisKeys.map(async (k) => {
-			if (k === "X" && (await has(root, k))) {
-				adataInit[k] = await readElem(root, k);
-			} else if (k !== "X") {
+			if ((k === "X" && (await has(root, k))) || k !== "X") {
 				adataInit[k] = await readElem(root, k);
 			}
 		}),
@@ -136,28 +134,37 @@ export async function readElem<
 	DN extends zarr.NumberDataType,
 >(
 	location: zarr.Group<S>,
-	key: "X",
+	key: Extract<AxisKey, "X">,
 ): Promise<SparseArray<DN> | zarr.Array<DN, S>>;
 export async function readElem<
 	S extends Readable,
-	D extends zarr.DataType,
 	DN extends zarr.NumberDataType,
-	K extends UIntType,
->(
-	location: zarr.Group<S>,
-	key: string,
-): Promise<SparseArray<DN> | LazyCategoricalArray<K, D, S> | zarr.Array<D, S>>;
+	D extends zarr.DataType,
+	K extends Exclude<AxisKey, "X"> | Extract<AxisKey, "X">,
+	R extends K extends Exclude<AxisKey, "X">
+		? AxisArrays<S>
+		: SparseArray<DN> | zarr.Array<DN, S>,
+>(location: zarr.Group<S>, key: K): Promise<R>;
 export async function readElem<
 	S extends Readable,
 	D extends zarr.DataType,
 	DN extends zarr.NumberDataType,
-	K extends UIntType,
+	I extends UIntType,
+>(
+	location: zarr.Group<S>,
+	key: string,
+): Promise<SparseArray<DN> | LazyCategoricalArray<I, D, S> | zarr.Array<D, S>>;
+export async function readElem<
+	S extends Readable,
+	D extends zarr.DataType,
+	DN extends zarr.NumberDataType,
+	I extends UIntType,
 >(
 	location: zarr.Group<S>,
 	key: string,
 ): Promise<
 	| SparseArray<DN>
-	| LazyCategoricalArray<K, D, S>
+	| LazyCategoricalArray<I, D, S>
 	| zarr.Array<D, S>
 	| AxisArrays<S>
 > {
@@ -177,7 +184,7 @@ export async function readElem<
 			return readCategorical_noVersion(
 				location,
 				key,
-				keyNode as zarr.Array<K, S>,
+				keyNode as zarr.Array<I, S>,
 			);
 		}
 	}
