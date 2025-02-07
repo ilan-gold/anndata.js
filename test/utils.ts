@@ -39,8 +39,8 @@ function base64Decode(encoded: string) {
 export function createStoreFromMapContents(
 	mapContents: Iterable<readonly [string, string]>,
 ) {
-	const contents_as_map = new Map(mapContents);
-	return new Proxy(contents_as_map, {
+	const map = new Map(mapContents);
+	return new Proxy(map, {
 		get: (target, prop) => {
 			if (prop === "get") {
 				// Replace the get method with one that decodes the value.

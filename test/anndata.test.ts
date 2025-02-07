@@ -28,6 +28,7 @@ import {
 	makeDiagonalWithMissingRow,
 	stringArrayFromPrefixAndSize,
 } from "./utils.js";
+
 const N_OBS = 50;
 const N_VAR = 25;
 
