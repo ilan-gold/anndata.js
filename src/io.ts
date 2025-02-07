@@ -168,7 +168,7 @@ export async function readElem<
 		"encoding-type": encodingType,
 		categories,
 	} = keyNode.attrs;
-	if (encodingVersion == undefined && encodingType == undefined) {
+	if (encodingVersion === undefined && encodingType === undefined) {
 		if (keyNode instanceof zarr.Group) {
 			return readDict_010(location, key, keyNode);
 		}
