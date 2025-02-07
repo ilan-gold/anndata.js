@@ -86,22 +86,27 @@ function readDict_010<S extends Readable>(
 	return new AxisArrays(location, key);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: signatures incompatible
-const IO_FUNC_REGISTRY_WITH_VERSION: { [index: string]: any } = {
+const IO_FUNC_REGISTRY_WITH_VERSION: {
+	[index: string]: <
+		S extends Readable,
+		D extends zarr.DataType,
+		K extends UIntType,
+		DN extends zarr.NumberDataType,
+	>(
+		location: zarr.Group<S>,
+		key: string,
+		elem: zarr.Group<S>,
+	) =>
+		| AxisArrays<S>
+		| Promise<LazyCategoricalArray<K, D, S>>
+		| Promise<SparseArray<DN>>;
+} = {
 	"csr_matrix,0.1.0": readSparse_010,
 	"csc_matrix,0.1.0": readSparse_010,
 	"categorical,0.2.0": readCategorical_020,
-	"array,0.2.0": readArray,
 	"dict,0.1.0": readDict_010,
 	"dataframe,0.1.0": readDict_010,
 	"dataframe,0.2.0": readDict_010,
-};
-
-// biome-ignore lint/suspicious/noExplicitAny: signatures incompatible
-const IO_FUNC_REGISTRY_WITHOUT_VERSION: { [index: string]: any } = {
-	categorical: readCategorical_noVersion,
-	array: readArray,
-	dict: readDict_010,
 };
 
 export async function readZarr<
@@ -163,23 +168,23 @@ export async function readElem<
 		"encoding-type": encodingType,
 		categories,
 	} = keyNode.attrs;
-	if (encodingVersion === undefined) {
+	if (encodingVersion == undefined && encodingType == undefined) {
 		if (keyNode instanceof zarr.Group) {
-			return IO_FUNC_REGISTRY_WITHOUT_VERSION.dict(location, key, keyNode);
+			return readDict_010(location, key, keyNode);
 		}
 		if (categories !== undefined) {
 			// Not encoded in old versions of anndata
-			return IO_FUNC_REGISTRY_WITHOUT_VERSION.categorical(
+			return readCategorical_noVersion(
 				location,
 				key,
 				keyNode as zarr.Array<K, S>,
 			);
 		}
-		return IO_FUNC_REGISTRY_WITHOUT_VERSION.array(
-			location,
-			key,
-			keyNode as zarr.Array<D, S>,
-		);
+	}
+	// Whether or not the encoding metadata has been written, for now we read array as array.
+	// TODO: add support for rec-array, which also fulfills this condition
+	if (keyNode instanceof zarr.Array) {
+		return readArray(location, key, keyNode as zarr.Array<D, S>);
 	}
 	return IO_FUNC_REGISTRY_WITH_VERSION[[encodingType, encodingVersion].join()](
 		location,
