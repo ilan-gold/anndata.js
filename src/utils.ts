@@ -5,16 +5,8 @@ import {
 	UnicodeStringArray,
 } from "@zarrita/typedarray";
 import * as zarr from "zarrita";
-import AnnData from "./anndata.js";
-import { readElem } from "./io.js";
 import type SparseArray from "./sparse_array.js";
-import {
-	type AxisKeyTypes,
-	AxisKeys,
-	type FullSelection,
-	type Slice,
-	type UIntType,
-} from "./types.js";
+import type { FullSelection, Slice, UIntType } from "./types.js";
 
 const V2_STRING_REGEX = /v2:([US])(\d+)/;
 
