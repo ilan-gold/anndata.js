@@ -4,10 +4,13 @@ import { LazyCategoricalArray, has, readSparse } from "./utils.js";
 import type { Readable } from "@zarrita/storage";
 import type { AxisKey, BackedArray, UIntType } from "./types.js";
 
-export default class AxisArrays<S extends Readable> {
+export default class AxisArrays<
+	S extends Readable,
+	K extends string | symbol = string,
+> {
 	public parentRoot: zarr.Group<S>;
 	public name: Exclude<AxisKey, "X">;
-	private cache: Map<string, BackedArray>;
+	private cache: Map<K, BackedArray>;
 
 	public constructor(
 		parentRoot: zarr.Group<S>,
@@ -22,9 +25,9 @@ export default class AxisArrays<S extends Readable> {
 		return this.parentRoot.resolve(this.name);
 	}
 
-	public async get(key: string): Promise<BackedArray> {
+	public async get(key: K): Promise<BackedArray> {
 		if (!(await this.has(key))) {
-			throw new Error(`${this.name} has no key: \"${key}\"`);
+			throw new Error(`${this.name} has no key: \"${String(key)}\"`);
 		}
 		if (!this.cache.has(key)) {
 			// categories needed for backward compat
@@ -68,7 +71,13 @@ export default class AxisArrays<S extends Readable> {
 		return val;
 	}
 
-	public async has(key: string): Promise<boolean> {
+	public async has(key: K): Promise<boolean> {
+		if (this.cache.has(key)) {
+			return true;
+		}
+		if (typeof key !== "string") {
+			return false;
+		}
 		return has(this.parentRoot, `${this.name}/${key}`);
 	}
 }
