@@ -1,8 +1,10 @@
 import type { Readable } from "@zarrita/storage";
 import * as zarr from "zarrita";
 import type AxisArrays from "./axis_arrays.js";
-import type SparseArray from "./sparse_array.js";
-import type { AxisKeyTypes } from "./types.js";
+import type { AxisKeyTypes, BackedArray } from "./types.js";
+
+export const X = Symbol("X");
+
 export default class AnnData<
 	S extends Readable,
 	D extends zarr.NumberDataType,
@@ -13,8 +15,7 @@ export default class AnnData<
 	public obsp: AxisArrays<S>;
 	public varm: AxisArrays<S>;
 	public varp: AxisArrays<S>;
-	public X: SparseArray<D> | zarr.Array<D> | undefined;
-	public layers: AxisArrays<S>;
+	public layers: AxisArrays<S, string | typeof X>;
 
 	constructor(data: AxisKeyTypes<S, D>) {
 		this.obs = data.obs;
@@ -23,8 +24,14 @@ export default class AnnData<
 		this.obsp = data.obsp;
 		this.varm = data.varm;
 		this.varp = data.varp;
-		this.X = data.X;
 		this.layers = data.layers;
+	}
+
+	public get X(): Promise<BackedArray | undefined> {
+		if (!this.layers.has(X)) {
+			return Promise.resolve(undefined);
+		}
+		return this.layers.get(X);
 	}
 
 	private async names(grp: zarr.Group<S>) {

@@ -1,4 +1,5 @@
-node_modules/
-dist/
-venv_*/
-.mypy_cache/
+/node_modules/
+/dist/
+/venv_*/
+/.mypy_cache/
+/.vscode/
