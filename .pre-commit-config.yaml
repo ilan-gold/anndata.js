@@ -1,0 +1,20 @@
+repos:
+-   repo: https://github.com/biomejs/pre-commit
+    rev: v1.9.4
+    hooks:
+    -   id: biome-check
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    -   id: trailing-whitespace
+        exclude: test/fixtures
+    -   id: end-of-file-fixer
+        exclude: test/fixtures
+    -   id: check-added-large-files
+    -   id: check-case-conflict
+    -   id: check-toml
+    -   id: check-yaml
+    -   id: check-merge-conflict
+    -   id: detect-private-key
+    -   id: no-commit-to-branch
+        args: ["--branch=main"]
