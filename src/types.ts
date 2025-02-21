@@ -23,7 +23,8 @@ export type ArrayType = Exclude<zarr.DataType, zarr.ObjectType>;
 export type BackedArray =
 	| zarr.Array<zarr.DataType, Readable>
 	| SparseArray<zarr.NumberDataType>
-	| LazyCategoricalArray<UIntType, zarr.DataType, Readable>;
+	| LazyCategoricalArray<UIntType, zarr.DataType, Readable>
+	| AxisArrays<Readable>;
 
 export interface AxisKeyTypes<
 	S extends Readable,
@@ -33,7 +34,7 @@ export interface AxisKeyTypes<
 	var: AxisArrays<S>;
 	obsm: AxisArrays<S>;
 	varm: AxisArrays<S>;
-	X: SparseArray<D> | zarr.Array<D> | undefined;
+	X: SparseArray<D> | zarr.Array<D, S> | undefined;
 	layers: AxisArrays<S>;
 	obsp: AxisArrays<S>;
 	varp: AxisArrays<S>;
