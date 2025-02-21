@@ -1,0 +1,11 @@
+{
+	"[json][jsonc][typescript]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.codeActionsOnSave": {
+			"source.sortImports": "always",
+			"source.fixAll": "always",
+		},
+	},
+	"typescript.tsdk": "node_modules/typescript/lib",
+}
