@@ -25,7 +25,10 @@ export default class AxisArrays<S extends Readable> {
 			throw new Error(`${this.name} has no key: \"${key}\"`);
 		}
 		if (!this.cache.has(key)) {
-			this.cache.set(key, await readElem(await zarr.open(this.axisRoot, { "kind": "group" }), key));
+			this.cache.set(
+				key,
+				await readElem(await zarr.open(this.axisRoot, { kind: "group" }), key),
+			);
 		}
 		const val = this.cache.get(key);
 		if (val === undefined) {
