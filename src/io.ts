@@ -8,8 +8,8 @@ import {
 	type AxisKey,
 	type AxisKeyTypes,
 	AxisKeys,
-	type UIntType,
 	type IndexType,
+	type UIntType,
 } from "./types.js";
 import { LazyCategoricalArray, has } from "./utils.js";
 
