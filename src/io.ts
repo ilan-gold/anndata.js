@@ -12,14 +12,11 @@ import {
 } from "./types.js";
 import { LazyCategoricalArray, has } from "./utils.js";
 
-async function readSparse_010<
-	S extends Readable,
-	D extends zarr.NumberDataType,
->(
+async function readSparse_010<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 	elem: zarr.Group<S> & Elem<S>,
-): Promise<SparseArray<D>> {
+): Promise<SparseArray<zarr.NumberDataType>> {
 	const shape = elem.attrs.shape as number[];
 	const format = elem.attrs["encoding-type"].slice(0, 3) as "csc" | "csr";
 	const indptr = (await zarr.open(elem.resolve("indptr"), {
@@ -30,27 +27,33 @@ async function readSparse_010<
 	})) as zarr.Array<"int32", S>; // todo: allow 64
 	const data = (await zarr.open(elem.resolve("data"), {
 		kind: "array",
-	})) as zarr.Array<D, S>;
+	})) as zarr.Array<zarr.NumberDataType, S>;
 	return new SparseArray(indices, indptr, data, shape, format);
 }
 
-async function readCategorical_020<
-	S extends Readable,
-	K extends UIntType,
-	D extends zarr.DataType,
->(
+async function readCategorical_020<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 	elem: zarr.Group<S>,
-): Promise<LazyCategoricalArray<K, D, S>> {
+): Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>> {
 	const cats = (await zarr.open(elem.resolve("categories"), {
 		kind: "array",
-	})) as zarr.Array<D, S>;
+	})) as zarr.Array<zarr.DataType, S>;
 	const codes = (await zarr.open(elem.resolve("codes"), {
 		kind: "array",
-	})) as zarr.Array<K, S>;
+	})) as zarr.Array<UIntType, S>;
 	return new LazyCategoricalArray(codes, cats);
 }
+
+function readDict_010<S extends Readable>(
+	location: zarr.Group<S>,
+	key: string,
+	elem: zarr.Group<S>,
+): AxisArrays<S> {
+	return new AxisArrays(location, key);
+}
+
+// Read functions that work for unversioned elements
 
 async function readCategorical_noVersion<
 	S extends Readable,
@@ -76,30 +79,17 @@ function readArray<S extends Readable, D extends zarr.DataType>(
 	return elem;
 }
 
-function readDict_010<S extends Readable>(
+type ReadFunctionVersioned = <S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
-	elem: zarr.Group<S>,
-): AxisArrays<S> {
-	return new AxisArrays(location, key);
-}
+	elem: zarr.Group<S> & Elem<S>,
+) =>
+	| AxisArrays<S>
+	| Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>>
+	| Promise<SparseArray<zarr.NumberDataType>>;
 
 const IO_FUNC_REGISTRY_WITH_VERSION: {
-	[index: string]:
-		| (<
-				S extends Readable,
-				D extends zarr.DataType,
-				K extends UIntType,
-				DN extends zarr.NumberDataType,
-		  >(
-				location: zarr.Group<S>,
-				key: string,
-				elem: zarr.Group<S> & Elem<S>,
-		  ) =>
-				| AxisArrays<S>
-				| Promise<LazyCategoricalArray<K, D, S>>
-				| Promise<SparseArray<DN>>)
-		| undefined;
+	[index: string]: ReadFunctionVersioned | undefined;
 } = {
 	"csr_matrix,0.1.0": readSparse_010,
 	"csc_matrix,0.1.0": readSparse_010,
@@ -127,7 +117,7 @@ export async function readZarr<
 
 export async function readElem<
 	S extends Readable,
-	K extends Exclude<AxisKey, "X"> | Extract<AxisKey, "X">,
+	K extends AxisKey,
 	R extends K extends Exclude<AxisKey, "X">
 		? AxisArrays<S>
 		: SparseArray<zarr.NumberDataType> | zarr.Array<zarr.NumberDataType, S>,
