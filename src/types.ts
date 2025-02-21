@@ -1,6 +1,6 @@
 import type { Readable } from "@zarrita/storage";
 import type * as zarr from "zarrita";
-import type AxisArrays from "./axis_arrays.js";
+import AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
 import type { LazyCategoricalArray } from "./utils.js";
 
@@ -23,7 +23,8 @@ export type ArrayType = Exclude<zarr.DataType, zarr.ObjectType>;
 export type BackedArray =
 	| zarr.Array<zarr.DataType, Readable>
 	| SparseArray<zarr.NumberDataType>
-	| LazyCategoricalArray<UIntType, zarr.DataType, Readable>;
+	| LazyCategoricalArray<UIntType, zarr.DataType, Readable>
+	| AxisArrays<Readable>;
 
 export interface AxisKeyTypes<
 	S extends Readable,
