@@ -18,12 +18,10 @@ async function readSparse_010<
 >(
 	location: zarr.Group<S>,
 	key: string,
-	elem: zarr.Group<S>,
+	elem: zarr.Group<S> & Elem<S>,
 ): Promise<SparseArray<D>> {
 	const shape = elem.attrs.shape as number[];
-	const format = (elem.attrs["encoding-type"] as string).slice(0, 3) as
-		| "csc"
-		| "csr";
+	const format = elem.attrs["encoding-type"].slice(0, 3) as "csc" | "csr";
 	const indptr = (await zarr.open(elem.resolve("indptr"), {
 		kind: "array",
 	})) as zarr.Array<"int32", S>; // todo: allow 64
@@ -87,19 +85,21 @@ function readDict_010<S extends Readable>(
 }
 
 const IO_FUNC_REGISTRY_WITH_VERSION: {
-	[index: string]: <
-		S extends Readable,
-		D extends zarr.DataType,
-		K extends UIntType,
-		DN extends zarr.NumberDataType,
-	>(
-		location: zarr.Group<S>,
-		key: string,
-		elem: zarr.Group<S>,
-	) =>
-		| AxisArrays<S>
-		| Promise<LazyCategoricalArray<K, D, S>>
-		| Promise<SparseArray<DN>>;
+	[index: string]:
+		| (<
+				S extends Readable,
+				D extends zarr.DataType,
+				K extends UIntType,
+				DN extends zarr.NumberDataType,
+		  >(
+				location: zarr.Group<S>,
+				key: string,
+				elem: zarr.Group<S> & Elem<S>,
+		  ) =>
+				| AxisArrays<S>
+				| Promise<LazyCategoricalArray<K, D, S>>
+				| Promise<SparseArray<DN>>)
+		| undefined;
 } = {
 	"csr_matrix,0.1.0": readSparse_010,
 	"csc_matrix,0.1.0": readSparse_010,
@@ -127,44 +127,32 @@ export async function readZarr<
 
 export async function readElem<
 	S extends Readable,
-	DN extends zarr.NumberDataType,
-	D extends zarr.DataType,
 	K extends Exclude<AxisKey, "X"> | Extract<AxisKey, "X">,
 	R extends K extends Exclude<AxisKey, "X">
 		? AxisArrays<S>
-		: SparseArray<DN> | zarr.Array<DN, S>,
+		: SparseArray<zarr.NumberDataType> | zarr.Array<zarr.NumberDataType, S>,
 >(location: zarr.Group<S>, key: K): Promise<R>;
-export async function readElem<
-	S extends Readable,
-	D extends zarr.DataType,
-	DN extends zarr.NumberDataType,
-	I extends UIntType,
->(
-	location: zarr.Group<S>,
-	key: string,
-): Promise<SparseArray<DN> | LazyCategoricalArray<I, D, S> | zarr.Array<D, S>>;
-export async function readElem<
-	S extends Readable,
-	D extends zarr.DataType,
-	DN extends zarr.NumberDataType,
-	I extends UIntType,
->(
+export async function readElem<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 ): Promise<
-	| SparseArray<DN>
-	| LazyCategoricalArray<I, D, S>
-	| zarr.Array<D, S>
+	| SparseArray<zarr.NumberDataType>
+	| LazyCategoricalArray<UIntType, zarr.DataType, S>
+	| zarr.Array<zarr.DataType, S>
+>;
+export async function readElem<S extends Readable>(
+	location: zarr.Group<S>,
+	key: string,
+): Promise<
+	| SparseArray<zarr.NumberDataType>
+	| LazyCategoricalArray<UIntType, zarr.DataType, S>
+	| zarr.Array<zarr.DataType, S>
 	| AxisArrays<S>
 > {
 	const keyRoot = location.resolve(key);
 	const keyNode = await zarr.open(keyRoot);
-	const {
-		"encoding-version": encodingVersion,
-		"encoding-type": encodingType,
-		categories,
-	} = keyNode.attrs;
-	if (encodingVersion === undefined && encodingType === undefined) {
+	const { categories } = keyNode.attrs;
+	if (!isElem<S>(keyNode)) {
 		if (keyNode instanceof zarr.Group) {
 			return readDict_010(location, key, keyNode);
 		}
@@ -173,18 +161,40 @@ export async function readElem<
 			return readCategorical_noVersion(
 				location,
 				key,
-				keyNode as zarr.Array<I, S>,
+				keyNode as zarr.Array<UIntType, S>,
 			);
 		}
 	}
 	// Whether or not the encoding metadata has been written, for now we read array as array.
 	// TODO: add support for rec-array, which also fulfills this condition
 	if (keyNode instanceof zarr.Array) {
-		return readArray(location, key, keyNode as zarr.Array<D, S>);
+		return readArray(location, key, keyNode);
 	}
-	const ioFuncId = [encodingType, encodingVersion].join();
-	if (IO_FUNC_REGISTRY_WITH_VERSION[ioFuncId] === undefined) {
+	const ioFuncId = [
+		keyNode.attrs["encoding-type"],
+		keyNode.attrs["encoding-version"],
+	].join();
+	const ioFunc = IO_FUNC_REGISTRY_WITH_VERSION[ioFuncId];
+	if (ioFunc === undefined) {
 		throw Error(`No io function found for ${ioFuncId}`);
 	}
-	return IO_FUNC_REGISTRY_WITH_VERSION[ioFuncId](location, key, keyNode);
+	return ioFunc(location, key, keyNode);
+}
+
+interface Elem<S extends Readable> extends zarr.Location<S> {
+	get attrs(): zarr.Attributes & {
+		"encoding-version": string;
+		"encoding-type": string;
+	};
+}
+
+function isElem<
+	S extends Readable,
+	D extends zarr.DataType = zarr.DataType,
+	L extends zarr.Array<D, S> | zarr.Group<S> = zarr.Array<D, S> | zarr.Group<S>,
+>(loc: L): loc is L & Elem<S> {
+	return (
+		loc.attrs["encoding-version"] !== undefined &&
+		loc.attrs["encoding-type"] !== undefined
+	);
 }
