@@ -182,7 +182,11 @@ export async function readElem<
 	if (keyNode instanceof zarr.Array) {
 		return readArray(location, key, keyNode as zarr.Array<D, S>);
 	}
-	return IO_FUNC_REGISTRY_WITH_VERSION[[encodingType, encodingVersion].join()](
+	const ioFuncId = [encodingType, encodingVersion].join();
+	if (IO_FUNC_REGISTRY_WITH_VERSION[ioFuncId] == undefined) {
+		throw Error(`No io function found for ${ioFuncId}`)
+	}
+	return IO_FUNC_REGISTRY_WITH_VERSION[ioFuncId](
 		location,
 		key,
 		keyNode,
