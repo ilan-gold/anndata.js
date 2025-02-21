@@ -34,12 +34,12 @@ export default class AnnData<
 	}
 
 	public async obsNames() {
-		const grp = await zarr.open(this.obs.axisRoot, { kind: "group" });
+		const grp = await this.obs.axisRoot();
 		return this.names(grp);
 	}
 
 	public async varNames() {
-		const grp = await zarr.open(this.var.axisRoot, { kind: "group" });
+		const grp = await this.var.axisRoot();
 		return this.names(grp);
 	}
 }

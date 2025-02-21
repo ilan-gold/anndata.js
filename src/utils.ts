@@ -5,16 +5,8 @@ import {
 	UnicodeStringArray,
 } from "@zarrita/typedarray";
 import * as zarr from "zarrita";
-import AnnData from "./anndata.js";
-import AxisArrays from "./axis_arrays.js";
-import SparseArray from "./sparse_array.js";
-import {
-	type AxisKeyTypes,
-	AxisKeys,
-	type FullSelection,
-	type Slice,
-	type UIntType,
-} from "./types.js";
+import type SparseArray from "./sparse_array.js";
+import type { FullSelection, Slice, UIntType } from "./types.js";
 
 const V2_STRING_REGEX = /v2:([US])(\d+)/;
 
@@ -137,7 +129,7 @@ function isChunk<D extends zarr.DataType>(
 	return chunkOrScalar instanceof Object && "shape" in chunkOrScalar;
 }
 
-function unwrapIf1d<D extends zarr.DataType>(
+function unwrapIf0d<D extends zarr.DataType>(
 	chunkOrScalar: zarr.Chunk<D> | zarr.Scalar<D>,
 ): zarr.Scalar<D> | zarr.Chunk<D> {
 	if (!isChunk(chunkOrScalar)) {
@@ -231,9 +223,9 @@ export async function get<
 		return { ...codes, data };
 	}
 	if (isSparseArray(array)) {
-		return unwrapIf1d(await array.get(selection));
+		return unwrapIf0d(await array.get(selection));
 	}
-	return unwrapIf1d(await zarr.get(array, selection));
+	return unwrapIf0d(await zarr.get(array, selection));
 }
 
 export async function has(root: zarr.Group<Readable>, path: string) {
@@ -245,54 +237,4 @@ export async function has(root: zarr.Group<Readable>, path: string) {
 		}
 	}
 	return true;
-}
-
-export async function readSparse<
-	S extends Readable,
-	D extends zarr.NumberDataType,
->(elem: zarr.Group<S>): Promise<SparseArray<D>> {
-	const grp = await zarr.open(elem, { kind: "group" });
-	const shape = grp.attrs.shape as number[];
-	const format = (grp.attrs["encoding-type"] as string).slice(0, 3) as
-		| "csc"
-		| "csr";
-	const indptr = (await zarr.open(grp.resolve("indptr"), {
-		kind: "array",
-	})) as zarr.Array<"int32", S>; // todo: allow 64
-	const indices = (await zarr.open(grp.resolve("indices"), {
-		kind: "array",
-	})) as zarr.Array<"int32", S>; // todo: allow 64
-	const data = (await zarr.open(grp.resolve("data"), {
-		kind: "array",
-	})) as zarr.Array<D, S>;
-	return new SparseArray(indices, indptr, data, shape, format);
-}
-
-export async function readZarr(path: string | Readable) {
-	let root: zarr.Group<Readable>;
-	if (typeof path === "string") {
-		const store = await zarr.tryWithConsolidated(new zarr.FetchStore(path));
-		root = await zarr.open(store, { kind: "group" });
-	} else {
-		root = await zarr.open(path, { kind: "group" });
-	}
-
-	const adataInit = {} as AxisKeyTypes<Readable, zarr.NumberDataType>;
-	await Promise.all(
-		AxisKeys.map(async (k) => {
-			if (k === "X") {
-				if (await has(root, k)) {
-					const x_elem = await zarr.open(root.resolve("X"));
-					if (x_elem instanceof zarr.Group) {
-						adataInit[k] = await readSparse(x_elem);
-					} else {
-						adataInit[k] = x_elem as zarr.Array<zarr.NumberDataType>;
-					}
-				}
-			} else {
-				adataInit[k] = new AxisArrays<Readable>(root, k);
-			}
-		}),
-	);
-	return new AnnData(adataInit);
 }

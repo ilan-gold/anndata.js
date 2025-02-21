@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import * as zarr from "zarrita";
+import { readZarr } from "../src/io.js";
 // import { HTTPStore, NestedArray } from "zarr";
-import { get, readZarr } from "../src/utils.js";
+import { get } from "../src/utils.js";
 
 import type { Readable } from "@zarrita/storage";
 import AxisArrays from "../src/axis_arrays.js";
