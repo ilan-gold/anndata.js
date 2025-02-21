@@ -16,8 +16,8 @@ export default class AxisArrays<S extends Readable> {
 		this.cache = new Map();
 	}
 
-	public get axisRoot(): zarr.Location<S> {
-		return this.parent.resolve(this.name);
+	public async axisRoot(): Promise<zarr.Group<S>> {
+		return await zarr.open(this.parent.resolve(this.name), { kind: "group" });
 	}
 
 	public async get(key: string): Promise<BackedArray> {
@@ -25,10 +25,7 @@ export default class AxisArrays<S extends Readable> {
 			throw new Error(`${this.name} has no key: \"${key}\"`);
 		}
 		if (!this.cache.has(key)) {
-			this.cache.set(
-				key,
-				await readElem(await zarr.open(this.axisRoot, { kind: "group" }), key),
-			);
+			this.cache.set(key, await readElem(await this.axisRoot(), key));
 		}
 		const val = this.cache.get(key);
 		if (val === undefined) {
