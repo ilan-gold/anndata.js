@@ -19,22 +19,24 @@ export type Slice = ReturnType<typeof zarr.slice>;
 export type AxisSelection = number | Slice | null;
 export type FullSelection = AxisSelection[];
 export type UIntType = zarr.Uint8 | zarr.Uint16 | zarr.Uint32;
+export type IndexType = zarr.Uint32; // TODO: | zarr.Uint64;
 export type ArrayType = Exclude<zarr.DataType, zarr.ObjectType>;
-export type BackedArray =
-	| zarr.Array<zarr.DataType, Readable>
-	| SparseArray<zarr.NumberDataType>
-	| LazyCategoricalArray<UIntType, zarr.DataType, Readable>
+export type BackedArray<S extends Readable> =
+	| zarr.Array<zarr.DataType, S>
+	| SparseArray<zarr.NumberDataType, IndexType, S>
+	| LazyCategoricalArray<UIntType, zarr.DataType, S>
 	| AxisArrays<Readable>;
 
 export interface AxisKeyTypes<
 	S extends Readable,
 	D extends zarr.NumberDataType,
+	I extends IndexType,
 > {
 	obs: AxisArrays<S>;
 	var: AxisArrays<S>;
 	obsm: AxisArrays<S>;
 	varm: AxisArrays<S>;
-	X: SparseArray<D> | zarr.Array<D, S> | undefined;
+	X: SparseArray<D, I, S> | zarr.Array<D, S> | undefined;
 	layers: AxisArrays<S>;
 	obsp: AxisArrays<S>;
 	varp: AxisArrays<S>;

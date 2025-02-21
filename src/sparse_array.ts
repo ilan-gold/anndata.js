@@ -1,6 +1,11 @@
 import type { Readable } from "@zarrita/storage";
 import * as zarr from "zarrita";
-import type { AxisSelection, FullSelection, Slice } from "./types.js";
+import type {
+	AxisSelection,
+	FullSelection,
+	IndexType,
+	Slice,
+} from "./types.js";
 import { CONSTRUCTORS } from "./utils.js";
 
 class IndexingError {
@@ -15,11 +20,15 @@ function isSlice(s: AxisSelection): s is Slice {
 }
 
 // TODO: Make this and other data types more restricitve but how?
-class SparseArray<D extends zarr.NumberDataType> {
+class SparseArray<
+	D extends zarr.NumberDataType,
+	I extends IndexType,
+	S extends Readable,
+> {
 	constructor(
-		public readonly indices: zarr.Array<zarr.NumberDataType, Readable>,
-		public readonly indptr: zarr.Array<zarr.NumberDataType, Readable>,
-		public readonly data: zarr.Array<D, Readable>,
+		public readonly indices: zarr.Array<I, S>,
+		public readonly indptr: zarr.Array<I, S>,
+		public readonly data: zarr.Array<D, S>,
 		public readonly shape: number[],
 		public readonly format: "csc" | "csr",
 	) {}
@@ -68,12 +77,12 @@ class SparseArray<D extends zarr.NumberDataType> {
 		shape[this.majorAxis] = majorAxisSize;
 
 		// Get start and stop of the data/indices based on major-axis selection
-		let { data: indptr } = await zarr.get(this.indptr, [
+		const { data: indptrArr } = await zarr.get(this.indptr, [
 			zarr.slice(sliceStart, sliceEnd),
 		]);
-		const start = indptr[0];
-		const stop = indptr[indptr.length - 1];
-		indptr = indptr.map((i) => i - start);
+		const start = indptrArr[0];
+		const stop = indptrArr[indptrArr.length - 1];
+		const indptr = indptrArr.map((i) => i - start);
 
 		// Create data to be returned
 		const isDataAllZeros = start === stop;
