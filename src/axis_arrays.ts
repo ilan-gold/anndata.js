@@ -1,4 +1,4 @@
-import type * as zarr from "zarrita";
+import * as zarr from "zarrita";
 import { has } from "./utils.js";
 
 import type { Readable } from "@zarrita/storage";
@@ -25,7 +25,7 @@ export default class AxisArrays<S extends Readable> {
 			throw new Error(`${this.name} has no key: \"${key}\"`);
 		}
 		if (!this.cache.has(key)) {
-			this.cache.set(key, await readElem(this.axisRoot as zarr.Group<S>, key));
+			this.cache.set(key, await readElem(await zarr.open(this.axisRoot, { "kind": "group" }), key));
 		}
 		const val = this.cache.get(key);
 		if (val === undefined) {
