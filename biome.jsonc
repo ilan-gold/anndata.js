@@ -15,12 +15,12 @@
 		{
 			"include": ["**/*.jsonc", "./tsconfig.json", "./.vscode/*.json"],
 			"json": {
-				"formatter": {
-					"trailingCommas": "all",
-				},
 				"parser": {
 					"allowComments": true,
 					"allowTrailingCommas": true,
+				},
+				"formatter": {
+					"trailingCommas": "all",
 				},
 			},
 		},
