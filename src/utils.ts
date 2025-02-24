@@ -14,11 +14,11 @@ export const CONSTRUCTORS = {
 	int8: Int8Array,
 	int16: Int16Array,
 	int32: Int32Array,
-	int64: globalThis.BigInt64Array,
+	int64: BigInt64Array,
 	uint8: Uint8Array,
 	uint16: Uint16Array,
 	uint32: Uint32Array,
-	uint64: globalThis.BigUint64Array,
+	uint64: BigUint64Array,
 	float32: Float32Array,
 	float64: Float64Array,
 	bool: BoolArray,
@@ -28,7 +28,7 @@ export function get_ctr<D extends zarr.DataType>(
 	data_type: D,
 ): zarr.TypedArrayConstructor<D> {
 	if (data_type === "v2:object") {
-		return globalThis.Array as unknown as zarr.TypedArrayConstructor<D>;
+		return Array as unknown as zarr.TypedArrayConstructor<D>;
 	}
 	const match = data_type.match(V2_STRING_REGEX);
 	if (match) {
