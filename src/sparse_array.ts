@@ -77,12 +77,12 @@ class SparseArray<
 		shape[this.majorAxis] = majorAxisSize;
 
 		// Get start and stop of the data/indices based on major-axis selection
-		const { data: indptrArr } = await zarr.get(this.indptr, [
-			zarr.slice(sliceStart, sliceEnd),
-		]);
-		const start = indptrArr[0];
-		const stop = indptrArr[indptrArr.length - 1];
-		const indptr = indptrArr.map((i) => i - start);
+		let indptr: zarr.TypedArray<I> | Uint32Array = (
+			await zarr.get(this.indptr, [zarr.slice(sliceStart, sliceEnd)])
+		).data;
+		const start = indptr[0];
+		const stop = indptr[indptr.length - 1];
+		indptr = indptr.map((i) => i - start);
 
 		// Create data to be returned
 		const isDataAllZeros = start === stop;
