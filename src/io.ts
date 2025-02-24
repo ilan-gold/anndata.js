@@ -8,6 +8,7 @@ import {
 	type AxisKey,
 	type AxisKeyTypes,
 	AxisKeys,
+	type IndexType,
 	type UIntType,
 } from "./types.js";
 import { LazyCategoricalArray, has } from "./utils.js";
@@ -16,15 +17,15 @@ async function readSparse_010<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 	elem: zarr.Group<S> & Elem<S>,
-): Promise<SparseArray<zarr.NumberDataType>> {
+): Promise<SparseArray<zarr.NumberDataType, IndexType, S>> {
 	const shape = elem.attrs.shape as number[];
 	const format = elem.attrs["encoding-type"].slice(0, 3) as "csc" | "csr";
 	const indptr = (await zarr.open(elem.resolve("indptr"), {
 		kind: "array",
-	})) as zarr.Array<"int32", S>; // todo: allow 64
+	})) as zarr.Array<IndexType, S>;
 	const indices = (await zarr.open(elem.resolve("indices"), {
 		kind: "array",
-	})) as zarr.Array<"int32", S>; // todo: allow 64
+	})) as zarr.Array<IndexType, S>;
 	const data = (await zarr.open(elem.resolve("data"), {
 		kind: "array",
 	})) as zarr.Array<zarr.NumberDataType, S>;
@@ -86,7 +87,7 @@ type ReadFunctionVersioned = <S extends Readable>(
 ) =>
 	| AxisArrays<S>
 	| Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>>
-	| Promise<SparseArray<zarr.NumberDataType>>;
+	| Promise<SparseArray<zarr.NumberDataType, IndexType, S>>;
 
 const IO_FUNC_REGISTRY_WITH_VERSION: {
 	[index: string]: ReadFunctionVersioned | undefined;
@@ -99,12 +100,11 @@ const IO_FUNC_REGISTRY_WITH_VERSION: {
 	"dataframe,0.2.0": readDict_010,
 };
 
-export async function readZarr<
-	S extends Readable,
-	D extends zarr.NumberDataType,
->(path: S): Promise<AnnData<S, D>> {
+export async function readZarr<S extends Readable>(
+	path: S,
+): Promise<AnnData<S, zarr.NumberDataType, IndexType>> {
 	const root = await zarr.open(path, { kind: "group" });
-	const adataInit = {} as AxisKeyTypes<S, D>;
+	const adataInit = {} as AxisKeyTypes<S, zarr.NumberDataType, IndexType>;
 	await Promise.all(
 		AxisKeys.map(async (k) => {
 			if ((k === "X" && (await has(root, k))) || k !== "X") {
@@ -120,13 +120,15 @@ export async function readElem<
 	K extends AxisKey,
 	R extends K extends Exclude<AxisKey, "X">
 		? AxisArrays<S>
-		: SparseArray<zarr.NumberDataType> | zarr.Array<zarr.NumberDataType, S>,
+		:
+				| SparseArray<zarr.NumberDataType, IndexType, S>
+				| zarr.Array<zarr.NumberDataType, S>,
 >(location: zarr.Group<S>, key: K): Promise<R>;
 export async function readElem<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 ): Promise<
-	| SparseArray<zarr.NumberDataType>
+	| SparseArray<zarr.NumberDataType, IndexType, S>
 	| LazyCategoricalArray<UIntType, zarr.DataType, S>
 	| zarr.Array<zarr.DataType, S>
 >;
@@ -134,7 +136,7 @@ export async function readElem<S extends Readable>(
 	location: zarr.Group<S>,
 	key: string,
 ): Promise<
-	| SparseArray<zarr.NumberDataType>
+	| SparseArray<zarr.NumberDataType, IndexType, S>
 	| LazyCategoricalArray<UIntType, zarr.DataType, S>
 	| zarr.Array<zarr.DataType, S>
 	| AxisArrays<S>

@@ -2,10 +2,12 @@ import type { Readable } from "@zarrita/storage";
 import * as zarr from "zarrita";
 import type AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
-import type { AxisKeyTypes } from "./types.js";
+import type { AxisKeyTypes, IndexType } from "./types.js";
+
 export default class AnnData<
 	S extends Readable,
 	D extends zarr.NumberDataType,
+	I extends IndexType,
 > {
 	public obs: AxisArrays<S>;
 	public var: AxisArrays<S>;
@@ -13,10 +15,10 @@ export default class AnnData<
 	public obsp: AxisArrays<S>;
 	public varm: AxisArrays<S>;
 	public varp: AxisArrays<S>;
-	public X: SparseArray<D> | zarr.Array<D> | undefined;
+	public X: SparseArray<D, I, S> | zarr.Array<D> | undefined;
 	public layers: AxisArrays<S>;
 
-	constructor(data: AxisKeyTypes<S, D>) {
+	constructor(data: AxisKeyTypes<S, D, I>) {
 		this.obs = data.obs;
 		this.var = data.var;
 		this.obsm = data.obsm;

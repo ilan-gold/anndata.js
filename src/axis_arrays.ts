@@ -8,7 +8,7 @@ import type { BackedArray } from "./types.js";
 export default class AxisArrays<S extends Readable> {
 	public parent: zarr.Group<S>;
 	public name: string;
-	private cache: Map<string, BackedArray>;
+	private cache: Map<string, BackedArray<S>>;
 
 	public constructor(parent: zarr.Group<S>, name: string) {
 		this.name = name;
@@ -20,7 +20,7 @@ export default class AxisArrays<S extends Readable> {
 		return await zarr.open(this.parent.resolve(this.name), { kind: "group" });
 	}
 
-	public async get(key: string): Promise<BackedArray> {
+	public async get(key: string): Promise<BackedArray<S>> {
 		if (!(await this.has(key))) {
 			throw new Error(`${this.name} has no key: \"${key}\"`);
 		}
