@@ -6,7 +6,7 @@ import {
 } from "@zarrita/typedarray";
 import * as zarr from "zarrita";
 import type SparseArray from "./sparse_array.js";
-import type { FullSelection, Slice, UIntType } from "./types.js";
+import type { FullSelection, IndexType, Slice, UIntType } from "./types.js";
 
 const V2_STRING_REGEX = /v2:([US])(\d+)/;
 
@@ -14,11 +14,11 @@ export const CONSTRUCTORS = {
 	int8: Int8Array,
 	int16: Int16Array,
 	int32: Int32Array,
-	int64: globalThis.BigInt64Array,
+	int64: BigInt64Array,
 	uint8: Uint8Array,
 	uint16: Uint16Array,
 	uint32: Uint32Array,
-	uint64: globalThis.BigUint64Array,
+	uint64: BigUint64Array,
 	float32: Float32Array,
 	float64: Float64Array,
 	bool: BoolArray,
@@ -28,7 +28,7 @@ export function get_ctr<D extends zarr.DataType>(
 	data_type: D,
 ): zarr.TypedArrayConstructor<D> {
 	if (data_type === "v2:object") {
-		return globalThis.Array as unknown as zarr.TypedArrayConstructor<D>;
+		return Array as unknown as zarr.TypedArrayConstructor<D>;
 	}
 	const match = data_type.match(V2_STRING_REGEX);
 	if (match) {
@@ -68,27 +68,34 @@ function isLazyCategoricalArray<
 	K extends UIntType,
 	S extends Readable,
 >(
-	array: LazyCategoricalArray<K, L, S> | zarr.Array<L, S> | SparseArray<N>,
+	array:
+		| LazyCategoricalArray<K, L, S>
+		| zarr.Array<L, S>
+		| SparseArray<N, IndexType, S>,
 ): array is LazyCategoricalArray<K, L, S> {
-	return (array as LazyCategoricalArray<K, L, S>).categories !== undefined;
+	return "categories" in array;
 }
 
 function isSparseArray<
 	L extends zarr.DataType,
 	N extends zarr.NumberDataType,
+	I extends IndexType,
 	K extends UIntType,
 	S extends Readable,
 >(
-	array: LazyCategoricalArray<K, L, S> | zarr.Array<L, S> | SparseArray<N>,
-): array is SparseArray<N> {
-	return (array as SparseArray<N>).indptr !== undefined;
+	array:
+		| LazyCategoricalArray<K, L, S>
+		| zarr.Array<L, S>
+		| SparseArray<N, I, S>,
+): array is SparseArray<N, I, S> {
+	return "indptr" in array;
 }
 
 function isZarrBoolTypedArrayFromDtype(
 	data: Iterable<unknown>,
 	dtype: zarr.DataType,
 ): data is BoolArray {
-	return "get" in data !== undefined && dtype === "bool";
+	return "get" in data && dtype === "bool";
 }
 
 function isZarrStringTypedArrayFromDtype(
@@ -150,7 +157,10 @@ export async function get<
 	N extends zarr.NumberDataType,
 	K extends UIntType,
 	S extends Readable,
-	Arr extends LazyCategoricalArray<K, L, S> | zarr.Array<L, S> | SparseArray<N>,
+	Arr extends
+		| LazyCategoricalArray<K, L, S>
+		| zarr.Array<L, S>
+		| SparseArray<zarr.NumberDataType, IndexType, S>,
 >(
 	array: Arr,
 	selection: (null | Slice | number)[],
@@ -164,7 +174,10 @@ export async function get<
 	N extends zarr.NumberDataType,
 	K extends UIntType,
 	S extends Readable,
-	Arr extends LazyCategoricalArray<K, L, S> | zarr.Array<L, S> | SparseArray<N>,
+	Arr extends
+		| LazyCategoricalArray<K, L, S>
+		| zarr.Array<L, S>
+		| SparseArray<N, IndexType, S>,
 >(
 	array: Arr,
 	selection: number[],
@@ -178,7 +191,10 @@ export async function get<
 	N extends zarr.NumberDataType,
 	K extends UIntType,
 	S extends Readable,
-	Arr extends LazyCategoricalArray<K, L, S> | zarr.Array<L, S> | SparseArray<N>,
+	Arr extends
+		| LazyCategoricalArray<K, L, S>
+		| zarr.Array<L, S>
+		| SparseArray<N, IndexType, S>,
 >(array: Arr, selection: FullSelection) {
 	if (isLazyCategoricalArray(array)) {
 		const codes = await zarr.get(array.codes, selection);
