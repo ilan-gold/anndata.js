@@ -1,9 +1,16 @@
-import type { Readable } from "@zarrita/storage";
 import {
 	BoolArray,
 	ByteStringArray,
 	UnicodeStringArray,
 } from "@zarrita/typedarray";
+import type {
+	Chunk,
+	DataType,
+	Group,
+	NumberDataType,
+	Readable,
+	Scalar,
+} from "zarrita";
 import * as zarr from "zarrita";
 import type SparseArray from "./sparse_array.js";
 import type { FullSelection, IndexType, Slice, UIntType } from "./types.js";
@@ -24,7 +31,7 @@ export const CONSTRUCTORS = {
 	bool: BoolArray,
 };
 
-export function get_ctr<D extends zarr.DataType>(
+export function get_ctr<D extends DataType>(
 	data_type: D,
 ): zarr.TypedArrayConstructor<D> {
 	if (data_type === "v2:object") {
@@ -49,7 +56,7 @@ export function get_ctr<D extends zarr.DataType>(
 
 export class LazyCategoricalArray<
 	K extends UIntType,
-	D extends zarr.DataType,
+	D extends DataType,
 	S extends Readable,
 > {
 	public codes: zarr.Array<K, S>;
@@ -63,8 +70,8 @@ export class LazyCategoricalArray<
 }
 
 function isLazyCategoricalArray<
-	L extends zarr.DataType,
-	N extends zarr.NumberDataType,
+	L extends DataType,
+	N extends NumberDataType,
 	K extends UIntType,
 	S extends Readable,
 >(
@@ -77,8 +84,8 @@ function isLazyCategoricalArray<
 }
 
 function isSparseArray<
-	L extends zarr.DataType,
-	N extends zarr.NumberDataType,
+	L extends DataType,
+	N extends NumberDataType,
 	I extends IndexType,
 	K extends UIntType,
 	S extends Readable,
@@ -93,21 +100,21 @@ function isSparseArray<
 
 function isZarrBoolTypedArrayFromDtype(
 	data: Iterable<unknown>,
-	dtype: zarr.DataType,
+	dtype: DataType,
 ): data is BoolArray {
 	return "get" in data && dtype === "bool";
 }
 
 function isZarrStringTypedArrayFromDtype(
 	data: Iterable<unknown>,
-	dtype: zarr.DataType,
+	dtype: DataType,
 ): data is ByteStringArray | UnicodeStringArray {
 	return "get" in data && dtype !== "bool";
 }
 
 function isTypedArrayFromDtype(
 	data: Iterable<unknown>,
-	dtype: zarr.DataType,
+	dtype: DataType,
 ): data is
 	| Int8Array
 	| Int16Array
@@ -130,15 +137,15 @@ function isNumericArray(data: unknown[]): data is number[] {
 	return data.every((i) => typeof i === "number");
 }
 
-function isChunk<D extends zarr.DataType>(
-	chunkOrScalar: zarr.Chunk<D> | zarr.Scalar<D>,
-): chunkOrScalar is zarr.Chunk<D> {
+function isChunk<D extends DataType>(
+	chunkOrScalar: Chunk<D> | Scalar<D>,
+): chunkOrScalar is Chunk<D> {
 	return chunkOrScalar instanceof Object && "shape" in chunkOrScalar;
 }
 
-function unwrapIf0d<D extends zarr.DataType>(
-	chunkOrScalar: zarr.Chunk<D> | zarr.Scalar<D>,
-): zarr.Scalar<D> | zarr.Chunk<D> {
+function unwrapIf0d<D extends DataType>(
+	chunkOrScalar: Chunk<D> | Scalar<D>,
+): Scalar<D> | Chunk<D> {
 	if (!isChunk(chunkOrScalar)) {
 		return chunkOrScalar;
 	}
@@ -147,31 +154,29 @@ function unwrapIf0d<D extends zarr.DataType>(
 			"get" in chunkOrScalar.data
 				? chunkOrScalar.data.get(0)
 				: chunkOrScalar.data[0]
-		) as zarr.Scalar<D>;
+		) as Scalar<D>;
 	}
-	return chunkOrScalar as zarr.Chunk<D>;
+	return chunkOrScalar as Chunk<D>;
 }
 
 export async function get<
-	L extends zarr.DataType,
-	N extends zarr.NumberDataType,
+	L extends DataType,
+	N extends NumberDataType,
 	K extends UIntType,
 	S extends Readable,
 	Arr extends
 		| LazyCategoricalArray<K, L, S>
 		| zarr.Array<L, S>
-		| SparseArray<zarr.NumberDataType, IndexType, S>,
+		| SparseArray<NumberDataType, IndexType, S>,
 >(
 	array: Arr,
 	selection: (null | Slice | number)[],
 ): Promise<
-	zarr.Chunk<
-		Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N
-	>
+	Chunk<Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N>
 >;
 export async function get<
-	L extends zarr.DataType,
-	N extends zarr.NumberDataType,
+	L extends DataType,
+	N extends NumberDataType,
 	K extends UIntType,
 	S extends Readable,
 	Arr extends
@@ -182,13 +187,11 @@ export async function get<
 	array: Arr,
 	selection: number[],
 ): Promise<
-	zarr.Scalar<
-		Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N
-	>
+	Scalar<Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N>
 >;
 export async function get<
-	L extends zarr.DataType,
-	N extends zarr.NumberDataType,
+	L extends DataType,
+	N extends NumberDataType,
 	K extends UIntType,
 	S extends Readable,
 	Arr extends
@@ -244,7 +247,7 @@ export async function get<
 	return unwrapIf0d(await zarr.get(array, selection));
 }
 
-export async function has(root: zarr.Group<Readable>, path: string) {
+export async function has(root: Group<Readable>, path: string) {
 	try {
 		await zarr.open(root.resolve(path));
 	} catch (error) {

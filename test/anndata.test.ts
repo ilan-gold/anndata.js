@@ -4,7 +4,7 @@ import { readZarr } from "../src/io.js";
 // import { HTTPStore, NestedArray } from "zarr";
 import { get } from "../src/utils.js";
 
-import type { Readable } from "@zarrita/storage";
+import type { Readable } from "zarrita";
 import AxisArrays from "../src/axis_arrays.js";
 import SparseArray from "../src/sparse_array.js";
 import anndata_0_7_CscFixture from "./fixtures/0.7/anndata-csc.json";

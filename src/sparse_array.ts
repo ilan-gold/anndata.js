@@ -1,4 +1,4 @@
-import type { Readable } from "@zarrita/storage";
+import type { NumberDataType, Readable, TypedArray } from "zarrita";
 import * as zarr from "zarrita";
 import type {
 	AxisSelection,
@@ -21,7 +21,7 @@ function isSlice(s: AxisSelection): s is Slice {
 
 // TODO: Make this and other data types more restricitve but how?
 class SparseArray<
-	D extends zarr.NumberDataType,
+	D extends NumberDataType,
 	I extends IndexType,
 	S extends Readable,
 > {
@@ -77,7 +77,7 @@ class SparseArray<
 		shape[this.majorAxis] = majorAxisSize;
 
 		// Get start and stop of the data/indices based on major-axis selection
-		let indptr: zarr.TypedArray<I> | Uint32Array = (
+		let indptr: TypedArray<I> | Uint32Array = (
 			await zarr.get(this.indptr, [zarr.slice(sliceStart, sliceEnd)])
 		).data;
 		const start = indptr[0];
@@ -118,10 +118,10 @@ class SparseArray<
 	}
 
 	densify(
-		indices: zarr.TypedArray<zarr.NumberDataType>,
-		indptr: zarr.TypedArray<zarr.NumberDataType>,
-		data: zarr.TypedArray<zarr.NumberDataType>,
-		dense: zarr.TypedArray<zarr.NumberDataType>,
+		indices: TypedArray<NumberDataType>,
+		indptr: TypedArray<NumberDataType>,
+		data: TypedArray<NumberDataType>,
+		dense: TypedArray<NumberDataType>,
 		shape: number[],
 	) {
 		const minorAxisLength = shape[this.minorAxis];
