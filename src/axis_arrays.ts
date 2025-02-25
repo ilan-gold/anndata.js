@@ -1,22 +1,22 @@
 import * as zarr from "zarrita";
 import { has } from "./utils.js";
 
-import type { Readable } from "@zarrita/storage";
+import type { Group, Readable } from "zarrita";
 import { readElem } from "./io.js";
 import type { BackedArray } from "./types.js";
 
 export default class AxisArrays<S extends Readable> {
-	public parent: zarr.Group<S>;
+	public parent: Group<S>;
 	public name: string;
 	private cache: Map<string, BackedArray<S>>;
 
-	public constructor(parent: zarr.Group<S>, name: string) {
+	public constructor(parent: Group<S>, name: string) {
 		this.name = name;
 		this.parent = parent;
 		this.cache = new Map();
 	}
 
-	public async axisRoot(): Promise<zarr.Group<S>> {
+	public async axisRoot(): Promise<Group<S>> {
 		return await zarr.open(this.parent.resolve(this.name), { kind: "group" });
 	}
 

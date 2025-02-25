@@ -1,4 +1,4 @@
-import type { Readable } from "@zarrita/storage";
+import type { NumberDataType, Readable } from "zarrita";
 import * as zarr from "zarrita";
 import type AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
@@ -6,7 +6,7 @@ import type { AxisKeyTypes, IndexType } from "./types.js";
 
 export default class AnnData<
 	S extends Readable,
-	D extends zarr.NumberDataType,
+	D extends NumberDataType,
 	I extends IndexType,
 > {
 	public obs: AxisArrays<S>;

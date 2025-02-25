@@ -32,15 +32,12 @@
     "coverage": "vitest run --coverage",
     "build": "tsc",
     "lint": "biome ci .",
-    "fix": "biome check --apply .",
-    "fix-unsafe": "biome check  --apply-unsafe .",
+    "fix": "biome check --write .",
+    "fix-unsafe": "biome check  --write --unsafe .",
     "publint": "pnpm exec publint"
   },
   "dependencies": {
-    "zarrita": "0.4.0-next.12",
-    "@zarrita/core": "0.1.0-next.10",
-    "@zarrita/indexing": "0.1.0-next.12",
-    "@zarrita/storage": "0.1.0-next.4",
+    "zarrita": "0.4.0-next.21",
     "@zarrita/typedarray": "0.1.0-next.2",
     "numcodecs": "^0.2.2"
   },
