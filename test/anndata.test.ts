@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as zarr from "zarrita";
-import { readZarr, readElem } from "../src/io.js";
+import { readElem, readZarr } from "../src/io.js";
 // import { HTTPStore, NestedArray } from "zarr";
 import { get } from "../src/utils.js";
 
@@ -213,12 +213,21 @@ describe("AnnData i/o", () => {
 
 describe("readElem", () => {
 	it("reset obs", async () => {
-		const store = createStoreFromMapContents(anndata_0_10_CsrFixture as [string, string][]);
+		const store = createStoreFromMapContents(
+			anndata_0_10_CsrFixture as [string, string][],
+		);
 		const adata = await readZarr(store as Readable);
 		const adataSet = await readZarr(store as Readable);
-		adataSet.obs = await readElem(await zarr.open(store as Readable, {kind:"group"}), "obs");
-		expect(Array.from((await get(await adata.obs.get("categorical"), [null])).data)).toEqual(
-			Array.from((await get(await adataSet.obs.get("categorical"), [null])).data)
+		adataSet.obs = await readElem(
+			await zarr.open(store as Readable, { kind: "group" }),
+			"obs",
 		);
-	})
-})
+		expect(
+			Array.from((await get(await adata.obs.get("categorical"), [null])).data),
+		).toEqual(
+			Array.from(
+				(await get(await adataSet.obs.get("categorical"), [null])).data,
+			),
+		);
+	});
+});
