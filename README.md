@@ -1,4 +1,7 @@
 # anndata.js
+[![NPM](https://img.shields.io/npm/v/anndata.js.svg?color=black)](https://www.npmjs.com/package/anndata.js)
+[![License](https://img.shields.io/npm/l/anndata.js.svg?color=black)](https://github.com/ilan-gold/anndata.js/raw/main/LICENSE)
+![GitHub Actions](https://github.com/ilan-gold/anndata.js/actions/workflows/ci.yml/badge.svg)
 
 AnnData for the browser
 
