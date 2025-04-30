@@ -34,17 +34,20 @@
     "lint": "biome ci .",
     "fix": "biome check --write .",
     "fix-unsafe": "biome check  --write --unsafe .",
-    "publint": "pnpm exec publint"
+    "publint": "pnpm exec publint",
+    "doc": "pnpm exec typedoc --out .docs --plugin typedoc-plugin-missing-exports --plugin typedoc-plugin-rename-defaults"
   },
   "dependencies": {
-    "zarrita": "0.4.0-next.21",
-    "@zarrita/typedarray": "0.1.0-next.2",
-    "numcodecs": "^0.2.2"
+    "numcodecs": "^0.2.2",
+    "zarrita": "0.5.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "vitest": "^0.32.2",
     "publint": "^0.2.2",
-    "typescript": "^4.9.5"
+    "typedoc": "^0.28.3",
+    "typedoc-plugin-missing-exports": "^4.0.0",
+    "typedoc-plugin-rename-defaults": "^0.7.3",
+    "typescript": "^5.8.0",
+    "vitest": "^0.32.2"
   }
 }

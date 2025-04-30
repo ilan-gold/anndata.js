@@ -1,8 +1,3 @@
-import {
-	BoolArray,
-	ByteStringArray,
-	UnicodeStringArray,
-} from "@zarrita/typedarray";
 import type {
 	Chunk,
 	DataType,
@@ -28,7 +23,7 @@ export const CONSTRUCTORS = {
 	uint64: BigUint64Array,
 	float32: Float32Array,
 	float64: Float64Array,
-	bool: BoolArray,
+	bool: zarr.BoolArray,
 };
 
 export function get_ctr<D extends DataType>(
@@ -41,7 +36,7 @@ export function get_ctr<D extends DataType>(
 	if (match) {
 		const [, kind, chars] = match;
 		// @ts-expect-error
-		return (kind === "U" ? UnicodeStringArray : ByteStringArray).bind(
+		return (kind === "U" ? zarr.UnicodeStringArray : zarr.ByteStringArray).bind(
 			null,
 			Number(chars),
 		);
@@ -54,6 +49,7 @@ export function get_ctr<D extends DataType>(
 	return ctr;
 }
 
+/** @internal */
 export class LazyCategoricalArray<
 	K extends UIntType,
 	D extends DataType,
@@ -101,14 +97,14 @@ function isSparseArray<
 function isZarrBoolTypedArrayFromDtype(
 	data: Iterable<unknown>,
 	dtype: DataType,
-): data is BoolArray {
+): data is zarr.BoolArray {
 	return "get" in data && dtype === "bool";
 }
 
 function isZarrStringTypedArrayFromDtype(
 	data: Iterable<unknown>,
 	dtype: DataType,
-): data is ByteStringArray | UnicodeStringArray {
+): data is zarr.ByteStringArray | zarr.UnicodeStringArray {
 	return "get" in data && dtype !== "bool";
 }
 
