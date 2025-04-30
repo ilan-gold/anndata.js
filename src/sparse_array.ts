@@ -86,9 +86,9 @@ class SparseArray<
 
 		// Create data to be returned
 		const isDataAllZeros = start === stop;
-		const dense = new CONSTRUCTORS[this.data.dtype](
+		const dense = (new CONSTRUCTORS[(this.data.dtype.toString() as keyof typeof CONSTRUCTORS)](
 			shape.reduce((a, b) => a * b, 1),
-		).fill(0);
+		) as TypedArray<D>).fill(0);
 		const arr = await zarr.create(new Map(), {
 			shape,
 			chunk_shape: shape,

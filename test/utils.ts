@@ -1,4 +1,4 @@
-import { ByteStringArray } from "@zarrita/typedarray";
+import { ByteStringArray } from "zarrita";
 import * as zarr from "zarrita";
 import AnnData from "../src/anndata.js";
 import AxisArrays from "../src/axis_arrays.js";

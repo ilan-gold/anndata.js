@@ -8,15 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@zarrita/typedarray':
-        specifier: 0.1.0-next.2
-        version: 0.1.0-next.2
       numcodecs:
         specifier: ^0.2.2
         version: 0.2.2
       zarrita:
-        specifier: 0.4.0-next.21
-        version: 0.4.0-next.21
+        specifier: 0.5.1
+        version: 0.5.1
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -285,20 +282,8 @@ packages:
   '@vitest/utils@0.32.4':
     resolution: {integrity: sha512-Gwnl8dhd1uJ+HXrYyV0eRqfmk9ek1ASE/LWfTCuWMw+d07ogHqp4hEAV28NiecimK6UY9DpSEPh+pXBA5gtTBg==}
 
-  '@zarrita/core@0.1.0-next.19':
-    resolution: {integrity: sha512-hbWXanTaoBUBcv2lwjUDcthncuafwIQ0TF1YbqV2QXd8w6WMBz2FTclN/IZ48j3AmRPw4FBcvkhXaiqWhs+a4Q==}
-
-  '@zarrita/indexing@0.1.0-next.21':
-    resolution: {integrity: sha512-iAn5VfcIF3NVPni5mpEjuUNQS5wO7uX08GeZlzwxyIg39+MfwkKfcD10EQJu9dNgkY7mh12fhyKbElYPrRDtYw==}
-
-  '@zarrita/storage@0.1.0-next.9':
-    resolution: {integrity: sha512-6zlrk2CkLPbGmj+LJlKSX11UKTstCJgH5WnkIje74LawjdJqR/rCFF894bMZgTBnkRmkhYtoFoKzDY2yBsMNRw==}
-
-  '@zarrita/typedarray@0.1.0-next.2':
-    resolution: {integrity: sha512-utFKMocqLk5j4GXCKkuZQr3mAakskjq77GoUV5B55HJh0leXH9idDIelzpUszEsLpSIkFwO2Id/NHuClhCuzSw==}
-
-  '@zarrita/typedarray@0.1.0-next.4':
-    resolution: {integrity: sha512-sGqc5Ldh8nt/FE9gDA89OsL+FH37wgSxCF1Liv08O8SbZ4w3N48Wngv0EWAXvU1aSEdGhb2ABtSfErVDwnp45Q==}
+  '@zarrita/storage@0.1.1':
+    resolution: {integrity: sha512-6/NUCvpzsIxfxeMv59jRTl/bOZg3GZfMP6iR8EIqrTaaE0S2jLL/ceX1OxcFBKnuA8/Z2YmgX4SFBHwFGrCcsw==}
 
   acorn-walk@8.3.2:
     resolution: {integrity: sha512-cjkyv4OtNCIeqhHrfS81QWXoCBPExR/J62oyEqepVw8WaQeSqpW2uhuLPh1m9eWhDuOo/jUXVTlifvesOWp/4A==}
@@ -666,8 +651,8 @@ packages:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
 
-  zarrita@0.4.0-next.21:
-    resolution: {integrity: sha512-qHx1C5ggsk4JQLHeNS8OypVcOkCRoVX9HgyxDZS/T3DIilbLrfAs7gn0sJkjmCXHUjJ+OxKi+B0nJ7W1l2P+kQ==}
+  zarrita@0.5.1:
+    resolution: {integrity: sha512-cyujP70BOl5DiXuLtM+0j9nq/pAov4SKXRYIQQOVnk2TfBg/jopX+FXLbqkq3ULOxFLB5AwkPbSp5KvZXoJrbQ==}
 
 snapshots:
 
@@ -852,26 +837,10 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@zarrita/core@0.1.0-next.19':
-    dependencies:
-      '@zarrita/storage': 0.1.0-next.9
-      '@zarrita/typedarray': 0.1.0-next.4
-      numcodecs: 0.3.2
-
-  '@zarrita/indexing@0.1.0-next.21':
-    dependencies:
-      '@zarrita/core': 0.1.0-next.19
-      '@zarrita/storage': 0.1.0-next.9
-      '@zarrita/typedarray': 0.1.0-next.4
-
-  '@zarrita/storage@0.1.0-next.9':
+  '@zarrita/storage@0.1.1':
     dependencies:
       reference-spec-reader: 0.2.0
       unzipit: 1.4.3
-
-  '@zarrita/typedarray@0.1.0-next.2': {}
-
-  '@zarrita/typedarray@0.1.0-next.4': {}
 
   acorn-walk@8.3.2: {}
 
@@ -1218,8 +1187,7 @@ snapshots:
 
   yocto-queue@1.0.0: {}
 
-  zarrita@0.4.0-next.21:
+  zarrita@0.5.1:
     dependencies:
-      '@zarrita/core': 0.1.0-next.19
-      '@zarrita/indexing': 0.1.0-next.21
-      '@zarrita/storage': 0.1.0-next.9
+      '@zarrita/storage': 0.1.1
+      numcodecs: 0.3.2
