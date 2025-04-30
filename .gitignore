@@ -3,3 +3,4 @@
 /venv_*/
 /.mypy_cache/
 /.vscode/
+/.docs/
