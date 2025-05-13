@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { Readable } from "zarrita";
 import * as zarr from "zarrita";
+import AxisArrays from "../src/axis_arrays.js";
 import { readElem, readZarr } from "../src/io.js";
+import SparseArray from "../src/sparse_array.js";
 // import { HTTPStore, NestedArray } from "zarr";
 import { get } from "../src/utils.js";
-
-import type { Readable } from "zarrita";
-import AxisArrays from "../src/axis_arrays.js";
-import SparseArray from "../src/sparse_array.js";
 import anndata_0_7_CscFixture from "./fixtures/0.7/anndata-csc.json";
 import anndata_0_7_CsrFixture from "./fixtures/0.7/anndata-csr.json";
 import anndata_0_7_DenseFixture from "./fixtures/0.7/anndata-dense.json";

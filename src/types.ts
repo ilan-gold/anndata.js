@@ -1,5 +1,5 @@
-import type { Readable } from "zarrita";
 import type * as zarr from "zarrita";
+import type { Readable } from "zarrita";
 import type AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
 import type { LazyCategoricalArray } from "./utils.js";
