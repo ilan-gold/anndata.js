@@ -1,20 +1,21 @@
-import * as zarr from "zarrita";
-
 import type { Group, NumberDataType, Readable } from "zarrita";
+import * as zarr from "zarrita";
 import AnnData from "./anndata.js";
 import AxisArrays from "./axis_arrays.js";
 import SparseArray from "./sparse_array.js";
 import {
 	type AxisKey,
-	type AxisKeyTypes,
 	AxisKeys,
+	type AxisKeyTypes,
 	type IndexType,
 	type UIntType,
 } from "./types.js";
-import { LazyCategoricalArray, has } from "./utils.js";
+import { has, LazyCategoricalArray } from "./utils.js";
 
 async function readSparse_010<S extends Readable>(
+	// biome-ignore lint: unused
 	location: Group<S>,
+	// biome-ignore lint: unused
 	key: string,
 	elem: Group<S> & Elem<S>,
 ): Promise<SparseArray<NumberDataType, IndexType, S>> {
@@ -33,7 +34,9 @@ async function readSparse_010<S extends Readable>(
 }
 
 async function readCategorical_020<S extends Readable>(
+	// biome-ignore lint: unused
 	location: Group<S>,
+	// biome-ignore lint: unused
 	key: string,
 	elem: Group<S>,
 ): Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>> {
@@ -49,6 +52,7 @@ async function readCategorical_020<S extends Readable>(
 function readDict_010<S extends Readable>(
 	location: Group<S>,
 	key: string,
+	// biome-ignore lint: unused
 	elem: Group<S>,
 ): AxisArrays<S> {
 	return new AxisArrays(location, key);
@@ -62,6 +66,7 @@ async function readCategorical_noVersion<
 	D extends zarr.DataType,
 >(
 	location: Group<S>,
+	// biome-ignore lint: unused
 	key: string,
 	elem: zarr.Array<K, S>,
 ): Promise<LazyCategoricalArray<K, D, S>> {
@@ -73,7 +78,9 @@ async function readCategorical_noVersion<
 }
 
 function readArray<S extends Readable, D extends zarr.DataType>(
+	// biome-ignore lint: unused
 	location: Group<S>,
+	// biome-ignore lint: unused
 	key: string,
 	elem: zarr.Array<D, S>,
 ): zarr.Array<D, S> {

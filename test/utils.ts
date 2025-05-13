@@ -1,9 +1,9 @@
-import { ByteStringArray } from "zarrita";
 import * as zarr from "zarrita";
+import { ByteStringArray } from "zarrita";
 import AnnData from "../src/anndata.js";
 import AxisArrays from "../src/axis_arrays.js";
 import SparseArray from "../src/sparse_array.js";
-import { type AxisKey, type AxisKeyTypes, AxisKeys } from "../src/types.js";
+import { type AxisKey, AxisKeys, type AxisKeyTypes } from "../src/types.js";
 import { LazyCategoricalArray } from "../src/utils.js";
 
 export function makeDiagonalWithMissingRow(M: number, N: number) {
@@ -271,6 +271,7 @@ async function genIndex(
 	await zarr.set(indexArr, null, indexChunk);
 }
 
+// biome-ignore lint: unused
 async function genAnnData(
 	keys: AxisKey[],
 	n_obs: number,

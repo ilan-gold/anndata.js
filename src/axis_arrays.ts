@@ -1,9 +1,8 @@
-import * as zarr from "zarrita";
-import { has } from "./utils.js";
-
 import type { Group, Readable } from "zarrita";
+import * as zarr from "zarrita";
 import { readElem } from "./io.js";
 import type { BackedArray } from "./types.js";
+import { has } from "./utils.js";
 
 export default class AxisArrays<S extends Readable> {
 	public parent: Group<S>;
