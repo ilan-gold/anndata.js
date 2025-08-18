@@ -196,7 +196,9 @@ async function genCategorical(
 	const categories = new ByteStringArray(10, numCategories); // TODO(ilan-gold): there appears to be a bug with the order of arguments on `ByteStringArray`: https://github.com/manzt/zarrita.js/blob/f838137481c40afdb6bed263a748cd9a65d7ed62/packages/typedarray/src/index.ts#L175-L176
 	Array.from(new Array(numCategories).keys())
 		.map((k) => `cat_${k}`)
-		.forEach((val, ind) => categories.set(ind, val));
+		.forEach((val, ind) => {
+			categories.set(ind, val);
+		});
 	grp.attrs["encoding-type"] = "categorical";
 	const codesArr = await zarr.create(grp, {
 		shape: [length],
@@ -245,7 +247,9 @@ async function genIndex(
 	const index = new ByteStringArray(10, length);
 	Array.from(new Array(length).keys())
 		.map((k) => `${axis}_${k}`)
-		.forEach((val, ind) => index.set(ind, val));
+		.forEach((val, ind) => {
+			index.set(ind, val);
+		});
 	// TODO(ilan-gold): open issue about encoding vlen-utf8
 	// const indexArr = await zarr.create(grp.resolve("index"), {
 	//   shape: [length],

@@ -21,7 +21,7 @@ export default class AxisArrays<S extends Readable> {
 
 	public async get(key: string): Promise<BackedArray<S>> {
 		if (!(await this.has(key))) {
-			throw new Error(`${this.name} has no key: \"${key}\"`);
+			throw new Error(`${this.name} has no key: "${key}"`);
 		}
 		if (!this.cache.has(key)) {
 			this.cache.set(key, await readElem(await this.axisRoot(), key));
