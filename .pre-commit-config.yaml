@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/biomejs/pre-commit
-    rev: v2.3.2
+    rev: v2.3.4
     hooks:
     -   id: biome-check
 -   repo: https://github.com/pre-commit/pre-commit-hooks
