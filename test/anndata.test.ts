@@ -5,7 +5,7 @@ import AxisArrays from "../src/axis_arrays.js";
 import { readElem, readZarr } from "../src/io.js";
 import SparseArray from "../src/sparse_array.js";
 // import { HTTPStore, NestedArray } from "zarr";
-import { get } from "../src/utils.js";
+import { get, LazyNullableArray } from "../src/utils.js";
 import anndata_0_7_CscFixture from "./fixtures/0.7/anndata-csc.json";
 import anndata_0_7_CsrFixture from "./fixtures/0.7/anndata-csr.json";
 import anndata_0_7_DenseFixture from "./fixtures/0.7/anndata-dense.json";
@@ -22,6 +22,8 @@ import anndata_0_10_CscFixture from "./fixtures/0.10/anndata-csc.json";
 import anndata_0_10_CsrFixture from "./fixtures/0.10/anndata-csr.json";
 import anndata_0_10_DenseFixture from "./fixtures/0.10/anndata-dense.json";
 import anndata_0_10_NoX from "./fixtures/0.10/anndata-no-X.json";
+import anndata_0_13_DtypesV2 from "./fixtures/0.13/anndata-dtypes.v2.json";
+import anndata_0_13_DtypesV3 from "./fixtures/0.13/anndata-dtypes.v3.json";
 import {
 	createStoreFromMapContents,
 	makeDiagonalWithMissingRow,
@@ -229,4 +231,95 @@ describe("readElem", () => {
 			),
 		);
 	});
+});
+
+describe("string dtypes and nullable arrays", () => {
+	for (const [zarrFormat, fixture] of Object.entries({
+		2: anndata_0_13_DtypesV2,
+		3: anndata_0_13_DtypesV3,
+	})) {
+		describe(`zarr v${zarrFormat}`, async () => {
+			const store = createStoreFromMapContents(fixture as [string, string][]);
+			const adata = await readZarr(store as Readable);
+			it("nullable-string-array index", async () => {
+				const ids = await adata.obsNames();
+				expect(ids).toBeInstanceOf(LazyNullableArray);
+				expect((await get(ids, [null])).data).toEqual(
+					stringArrayFromPrefixAndSize("obs", 6),
+				);
+				expect((await get(await adata.varNames(), [null])).data).toEqual(
+					stringArrayFromPrefixAndSize("var", 3),
+				);
+			});
+			it("nullable-string-array", async () => {
+				const col = await adata.obs.get("nullable_string");
+				expect(col).toBeInstanceOf(LazyNullableArray);
+				expect(
+					(col as LazyNullableArray<zarr.DataType, Readable>).naValue,
+				).toEqual("NA");
+				expect(await get(col, [null])).toEqual({
+					data: ["a", null, "c", "d", null, "f"],
+					shape: [6],
+					stride: [1],
+				});
+				expect(await get(col, [zarr.slice(1, 3)])).toEqual({
+					data: [null, "c"],
+					shape: [2],
+					stride: [1],
+				});
+				expect(await get(col, [0])).toEqual("a");
+				expect(await get(col, [1])).toEqual(null);
+				const strings = await adata.obs.get("string");
+				expect(
+					(strings as LazyNullableArray<zarr.DataType, Readable>).naValue,
+				).toEqual("NaN");
+				expect((await get(strings, [null])).data).toEqual(
+					stringArrayFromPrefixAndSize("str", 6),
+				);
+			});
+			it("nullable-integer", async () => {
+				const col = await adata.obs.get("nullable_int");
+				expect(col).toBeInstanceOf(LazyNullableArray);
+				expect((await get(col, [null])).data).toEqual([
+					0n,
+					null,
+					2n,
+					3n,
+					null,
+					5n,
+				]);
+				expect(await get(col, [2])).toEqual(2n);
+				expect(await get(col, [4])).toEqual(null);
+			});
+			it("nullable-boolean", async () => {
+				const col = await adata.obs.get("nullable_bool");
+				expect(col).toBeInstanceOf(LazyNullableArray);
+				expect((await get(col, [null])).data).toEqual([
+					true,
+					null,
+					false,
+					true,
+					null,
+					false,
+				]);
+				expect(await get(col, [0])).toEqual(true);
+				expect(await get(col, [1])).toEqual(null);
+			});
+			it("categorical with missing values", async () => {
+				const col = await adata.obs.get("categorical_missing");
+				expect(await get(col, [null])).toEqual({
+					data: ["x", "y", null, "x", "y", null],
+					shape: [6],
+					stride: [1],
+				});
+				expect(await get(col, [1])).toEqual("y");
+				expect(await get(col, [2])).toEqual(null);
+			});
+			it("string scalar", async () => {
+				const root = await zarr.open(store as Readable, { kind: "group" });
+				const scalar = await readElem(root, "uns/string_scalar");
+				expect(await get(scalar, [])).toEqual("hello");
+			});
+		});
+	}
 });

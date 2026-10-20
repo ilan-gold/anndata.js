@@ -1,6 +1,7 @@
+import type * as zarr from "zarrita";
 import type { NumberDataType, Readable } from "zarrita";
-import * as zarr from "zarrita";
 import type AxisArrays from "./axis_arrays.js";
+import { readElem } from "./io.js";
 import type SparseArray from "./sparse_array.js";
 import type { AxisKeyTypes, IndexType } from "./types.js";
 
@@ -30,9 +31,8 @@ export default class AnnData<
 	}
 
 	private async names(grp: zarr.Group<S>) {
-		return zarr.open(grp.resolve(String(grp.attrs._index || "_index")), {
-			kind: "array",
-		});
+		// The index may be an array or, e.g., a nullable-string-array group.
+		return readElem(grp, String(grp.attrs._index || "_index"));
 	}
 
 	public async obsNames() {
