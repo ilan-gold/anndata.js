@@ -7,6 +7,7 @@ import type {
 	Scalar,
 } from "zarrita";
 import * as zarr from "zarrita";
+import type AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
 import type {
 	CodeType,
@@ -58,7 +59,11 @@ export function get_ctr<D extends DataType>(
 	return ctr;
 }
 
-/** @internal */
+/**
+ * A categorical element: an array of integer codes indexing into an array of categories.
+ * Negative codes denote missing values.
+ * Each component can be loaded independently, e.g. `zarr.get(arr.codes, selection)`.
+ */
 export class LazyCategoricalArray<
 	K extends CodeType,
 	D extends DataType,
@@ -77,7 +82,7 @@ export class LazyCategoricalArray<
 /**
  * A nullable-integer, nullable-boolean, or nullable-string-array element:
  * an array of values alongside a boolean mask that is true where a value is missing.
- * @internal
+ * Each component can be loaded independently, e.g. `zarr.get(arr.mask, selection)`.
  */
 export class LazyNullableArray<D extends DataType, S extends Readable> {
 	public values: zarr.Array<D, S>;
@@ -97,7 +102,7 @@ export class LazyNullableArray<D extends DataType, S extends Readable> {
 	}
 }
 
-function isLazyCategoricalArray<
+export function isLazyCategoricalArray<
 	L extends DataType,
 	N extends NumberDataType,
 	K extends CodeType,
@@ -107,12 +112,13 @@ function isLazyCategoricalArray<
 		| LazyCategoricalArray<K, L, S>
 		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
-		| SparseArray<N, IndexType, S>,
+		| SparseArray<N, IndexType, S>
+		| AxisArrays<S>,
 ): array is LazyCategoricalArray<K, L, S> {
 	return "categories" in array;
 }
 
-function isLazyNullableArray<
+export function isLazyNullableArray<
 	L extends DataType,
 	N extends NumberDataType,
 	K extends CodeType,
@@ -122,7 +128,8 @@ function isLazyNullableArray<
 		| LazyCategoricalArray<K, L, S>
 		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
-		| SparseArray<N, IndexType, S>,
+		| SparseArray<N, IndexType, S>
+		| AxisArrays<S>,
 ): array is LazyNullableArray<L, S> {
 	return "mask" in array;
 }
