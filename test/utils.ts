@@ -40,17 +40,33 @@ export function createStoreFromMapContents(
 	mapContents: Iterable<readonly [string, string]>,
 ) {
 	const map = new Map(mapContents);
+	// Replace the get method with one that decodes the value.
+	const get = (key: string) => {
+		const encodedVal = map.get(key);
+		if (encodedVal) {
+			return base64Decode(encodedVal);
+		}
+		return undefined;
+	};
+	// Zarrita requires getRange to read sharded (zarr v3) arrays.
+	// Reference: https://github.com/vitessce/vitessce/blob/main/packages/utils/zarr-utils/src/base-getrange.ts
+	const getRange = (key: string, range: zarr.RangeQuery) => {
+		const bytes = get(key);
+		if (!bytes) {
+			return undefined;
+		}
+		if ("suffixLength" in range) {
+			return bytes.subarray(bytes.length - range.suffixLength);
+		}
+		return bytes.subarray(range.offset, range.offset + range.length);
+	};
 	return new Proxy(map, {
 		get: (target, prop) => {
 			if (prop === "get") {
-				// Replace the get method with one that decodes the value.
-				return (key: string) => {
-					const encodedVal = target.get(key);
-					if (encodedVal) {
-						return base64Decode(encodedVal);
-					}
-					return undefined;
-				};
+				return get;
+			}
+			if (prop === "getRange") {
+				return getRange;
 			}
 			return Reflect.get(target, prop);
 		},
@@ -133,8 +149,8 @@ async function genSparse(
 			const dtype = getBufferElementType(array);
 			const zarrArray = await zarr.create(grp.resolve(name), {
 				shape,
-				chunk_shape: shape,
-				data_type: dtype,
+				chunkShape: shape,
+				dtype: dtype,
 			});
 			const chunk = {
 				data: array,
@@ -160,8 +176,8 @@ async function genDense(
 ) {
 	const arr = await zarr.create(grp, {
 		shape,
-		chunk_shape: shape,
-		data_type: "float32",
+		chunkShape: shape,
+		dtype: "float32",
 	});
 	const data = new Float32Array(shape.reduce((a, b) => a * b, 1));
 	const middleRow = Math.floor(shape[0] / 2);
@@ -202,20 +218,20 @@ async function genCategorical(
 	grp.attrs["encoding-type"] = "categorical";
 	const codesArr = await zarr.create(grp, {
 		shape: [length],
-		chunk_shape: [length],
-		data_type: "uint32",
+		chunkShape: [length],
+		dtype: "uint32",
 	});
 	// TODO(ilan-gold): open issue about encoding vlen-utf8
 	// const categoriesArr = await zarr.create(grp, {
 	//   shape: [numCategories],
-	//   chunk_shape: [numCategories],
-	//   data_type: "v2:object",
+	//   chunkShape: [numCategories],
+	//   dtype: "v2:object",
 	//   codecs: [{ name: "vlen-utf8", configuration: {} }]
 	// });
 	const categoriesArr = await zarr.create(grp, {
 		shape: [numCategories],
-		chunk_shape: [numCategories],
-		data_type: "v2:S50",
+		chunkShape: [numCategories],
+		dtype: "v2:S50",
 	});
 	const codesChunk = {
 		data: codes,
@@ -253,8 +269,8 @@ async function genIndex(
 	// TODO(ilan-gold): open issue about encoding vlen-utf8
 	// const indexArr = await zarr.create(grp.resolve("index"), {
 	//   shape: [length],
-	//   chunk_shape: [length],
-	//   data_type: "v2:object",
+	//   chunkShape: [length],
+	//   dtype: "v2:object",
 	//   codecs: [{ name: "vlen-utf8", configuration: {} }]
 	// });
 	// const indexChunk = {
@@ -264,8 +280,8 @@ async function genIndex(
 	// } as zarr.Chunk<"v2:object">;
 	const indexArr = await zarr.create(grp.resolve(indexKey), {
 		shape: [length],
-		chunk_shape: [length],
-		data_type: "v2:S50",
+		chunkShape: [length],
+		dtype: "v2:S50",
 	});
 	const indexChunk = {
 		data: index,

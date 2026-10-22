@@ -7,8 +7,16 @@ import type {
 	Scalar,
 } from "zarrita";
 import * as zarr from "zarrita";
+import type AxisArrays from "./axis_arrays.js";
 import type SparseArray from "./sparse_array.js";
-import type { FullSelection, IndexType, Slice, UIntType } from "./types.js";
+import type {
+	CodeType,
+	FullSelection,
+	IndexType,
+	NaValue,
+	NullableChunk,
+	Slice,
+} from "./types.js";
 
 const V2_STRING_REGEX = /v2:([US])(\d+)/;
 
@@ -29,7 +37,9 @@ export const CONSTRUCTORS = {
 export function get_ctr<D extends DataType>(
 	data_type: D,
 ): zarr.TypedArrayConstructor<D> {
-	if (data_type === "v2:object") {
+	// Variable-length strings: "v2:object" (zarr v2 with the vlen-utf8 filter)
+	// and "string" (zarr v3) are both decoded to plain arrays.
+	if (data_type === "v2:object" || data_type === "string") {
 		return Array as unknown as zarr.TypedArrayConstructor<D>;
 	}
 	const match = data_type.match(V2_STRING_REGEX);
@@ -49,9 +59,13 @@ export function get_ctr<D extends DataType>(
 	return ctr;
 }
 
-/** @internal */
+/**
+ * A categorical element: an array of integer codes indexing into an array of categories.
+ * Negative codes denote missing values.
+ * Each component can be loaded independently, e.g. `zarr.get(arr.codes, selection)`.
+ */
 export class LazyCategoricalArray<
-	K extends UIntType,
+	K extends CodeType,
 	D extends DataType,
 	S extends Readable,
 > {
@@ -65,29 +79,71 @@ export class LazyCategoricalArray<
 	}
 }
 
-function isLazyCategoricalArray<
+/**
+ * A nullable-integer, nullable-boolean, or nullable-string-array element:
+ * an array of values alongside a boolean mask that is true where a value is missing.
+ * Each component can be loaded independently, e.g. `zarr.get(arr.mask, selection)`.
+ */
+export class LazyNullableArray<D extends DataType, S extends Readable> {
+	public values: zarr.Array<D, S>;
+
+	public mask: zarr.Array<"bool", S>;
+
+	public naValue: NaValue;
+
+	constructor(
+		values: zarr.Array<D, S>,
+		mask: zarr.Array<"bool", S>,
+		naValue: NaValue = "NA",
+	) {
+		this.values = values;
+		this.mask = mask;
+		this.naValue = naValue;
+	}
+}
+
+export function isLazyCategoricalArray<
 	L extends DataType,
 	N extends NumberDataType,
-	K extends UIntType,
+	K extends CodeType,
 	S extends Readable,
 >(
 	array:
 		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
-		| SparseArray<N, IndexType, S>,
+		| SparseArray<N, IndexType, S>
+		| AxisArrays<S>,
 ): array is LazyCategoricalArray<K, L, S> {
 	return "categories" in array;
+}
+
+export function isLazyNullableArray<
+	L extends DataType,
+	N extends NumberDataType,
+	K extends CodeType,
+	S extends Readable,
+>(
+	array:
+		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
+		| zarr.Array<L, S>
+		| SparseArray<N, IndexType, S>
+		| AxisArrays<S>,
+): array is LazyNullableArray<L, S> {
+	return "mask" in array;
 }
 
 function isSparseArray<
 	L extends DataType,
 	N extends NumberDataType,
 	I extends IndexType,
-	K extends UIntType,
+	K extends CodeType,
 	S extends Readable,
 >(
 	array:
 		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
 		| SparseArray<N, I, S>,
 ): array is SparseArray<N, I, S> {
@@ -139,6 +195,13 @@ function isChunk<D extends DataType>(
 	return chunkOrScalar instanceof Object && "shape" in chunkOrScalar;
 }
 
+function getItem<D extends DataType>(
+	data: zarr.TypedArray<D>,
+	index: number,
+): Scalar<D> {
+	return ("get" in data ? data.get(index) : data[index]) as Scalar<D>;
+}
+
 function unwrapIf0d<D extends DataType>(
 	chunkOrScalar: Chunk<D> | Scalar<D>,
 ): Scalar<D> | Chunk<D> {
@@ -146,11 +209,7 @@ function unwrapIf0d<D extends DataType>(
 		return chunkOrScalar;
 	}
 	if (chunkOrScalar.shape.length === 1 && chunkOrScalar.shape[0] === 1) {
-		return (
-			"get" in chunkOrScalar.data
-				? chunkOrScalar.data.get(0)
-				: chunkOrScalar.data[0]
-		) as Scalar<D>;
+		return getItem(chunkOrScalar.data, 0);
 	}
 	return chunkOrScalar as Chunk<D>;
 }
@@ -158,43 +217,66 @@ function unwrapIf0d<D extends DataType>(
 export async function get<
 	L extends DataType,
 	N extends NumberDataType,
-	K extends UIntType,
+	K extends CodeType,
 	S extends Readable,
 	Arr extends
 		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
 		| SparseArray<NumberDataType, IndexType, S>,
 >(
 	array: Arr,
 	selection: (null | Slice | number)[],
 ): Promise<
-	Chunk<Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N>
+	Arr extends LazyNullableArray<L, S>
+		? NullableChunk<L>
+		: Arr extends LazyCategoricalArray<K, L, S>
+			? Chunk<L> | NullableChunk<L>
+			: Chunk<Arr extends zarr.Array<L, S> ? L : N>
 >;
 export async function get<
 	L extends DataType,
 	N extends NumberDataType,
-	K extends UIntType,
+	K extends CodeType,
 	S extends Readable,
 	Arr extends
 		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
 		| SparseArray<N, IndexType, S>,
 >(
 	array: Arr,
 	selection: number[],
 ): Promise<
-	Scalar<Arr extends zarr.Array<L, S> | LazyCategoricalArray<K, L, S> ? L : N>
+	Arr extends LazyNullableArray<L, S> | LazyCategoricalArray<K, L, S>
+		? Scalar<L> | null
+		: Scalar<Arr extends zarr.Array<L, S> ? L : N>
 >;
 export async function get<
 	L extends DataType,
 	N extends NumberDataType,
-	K extends UIntType,
+	K extends CodeType,
 	S extends Readable,
 	Arr extends
 		| LazyCategoricalArray<K, L, S>
+		| LazyNullableArray<L, S>
 		| zarr.Array<L, S>
 		| SparseArray<N, IndexType, S>,
 >(array: Arr, selection: FullSelection) {
+	if (isLazyNullableArray(array)) {
+		const [values, mask] = await Promise.all([
+			zarr.get(array.values, selection),
+			zarr.get(array.mask, selection),
+		]);
+		if (!isChunk(values) || !isChunk(mask)) {
+			return mask ? null : values;
+		}
+		const data: NullableChunk<L>["data"] = Array.from(
+			{ length: values.data.length },
+			(_, i) => (getItem(mask.data, i) ? null : getItem(values.data, i)),
+		);
+		return { data, shape: values.shape, stride: values.stride };
+	}
 	if (isLazyCategoricalArray(array)) {
 		const codes = await zarr.get(array.codes, selection);
 		const categories = await zarr.get(array.categories, [null]);
@@ -202,6 +284,9 @@ export async function get<
 		const dtype = array.categories.dtype;
 		if (isNumericArray(selection)) {
 			const category = Number(codes);
+			if (category < 0) {
+				return null;
+			}
 			if (isTypedArrayFromDtype(categoriesData, dtype)) {
 				return categoriesData[category];
 			}
@@ -212,6 +297,14 @@ export async function get<
 				return categoriesData.get(category);
 			}
 			throw new Error("Unrecognized category");
+		}
+		const codesData = Array.from(codes.data, Number);
+		if (codesData.some((code) => code < 0)) {
+			// A negative code denotes a missing value, which typed arrays cannot hold.
+			const data: NullableChunk<L>["data"] = codesData.map((code) =>
+				code < 0 ? null : getItem(categoriesData, code),
+			);
+			return { data, shape: codes.shape, stride: codes.stride };
 		}
 		const data = new (get_ctr(array.categories.dtype))(codes.data.length); // TODO(ilan-gold): open issue in zarrita
 		for (let i = 0; i < codes.data.length; i += 1) {
@@ -247,7 +340,7 @@ export async function has(root: Group<Readable>, path: string) {
 	try {
 		await zarr.open(root.resolve(path));
 	} catch (error) {
-		if (error instanceof zarr.NodeNotFoundError) {
+		if (zarr.isZarritaError(error, "NotFoundError")) {
 			return false;
 		}
 	}

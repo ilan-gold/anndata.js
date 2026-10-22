@@ -1,0 +1,16 @@
+{
+  "attributes": {
+    "column-order": [
+      "string",
+      "nullable_int",
+      "nullable_bool",
+      "nullable_string",
+      "categorical_missing"
+    ],
+    "_index": "_index",
+    "encoding-type": "dataframe",
+    "encoding-version": "0.2.0"
+  },
+  "zarr_format": 3,
+  "node_type": "group"
+}

@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "numcodecs": "^0.2.2",
-    "zarrita": "0.5.1"
+    "zarrita": "0.7.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.0-beta.3",

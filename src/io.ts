@@ -7,10 +7,11 @@ import {
 	type AxisKey,
 	AxisKeys,
 	type AxisKeyTypes,
+	type CodeType,
 	type IndexType,
-	type UIntType,
+	type NaValue,
 } from "./types.js";
-import { has, LazyCategoricalArray } from "./utils.js";
+import { has, LazyCategoricalArray, LazyNullableArray } from "./utils.js";
 
 async function readSparse_010<S extends Readable>(
 	// biome-ignore lint: unused
@@ -39,14 +40,35 @@ async function readCategorical_020<S extends Readable>(
 	// biome-ignore lint: unused
 	key: string,
 	elem: Group<S>,
-): Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>> {
-	const cats = (await zarr.open(elem.resolve("categories"), {
-		kind: "array",
-	})) as zarr.Array<zarr.DataType, S>;
+): Promise<LazyCategoricalArray<CodeType, zarr.DataType, S>> {
+	let cats = await zarr.open(elem.resolve("categories"));
+	if (cats instanceof zarr.Group) {
+		// Categories should be a string-array, but also accept a nullable-string-array
+		// (as Vitessce does), using its values since categories cannot be missing.
+		cats = await zarr.open(cats.resolve("values"), { kind: "array" });
+	}
 	const codes = (await zarr.open(elem.resolve("codes"), {
 		kind: "array",
-	})) as zarr.Array<UIntType, S>;
-	return new LazyCategoricalArray(codes, cats);
+	})) as zarr.Array<CodeType, S>;
+	return new LazyCategoricalArray(codes, cats as zarr.Array<zarr.DataType, S>);
+}
+
+async function readNullable_010<S extends Readable>(
+	// biome-ignore lint: unused
+	location: Group<S>,
+	// biome-ignore lint: unused
+	key: string,
+	elem: Group<S> & Elem<S>,
+): Promise<LazyNullableArray<zarr.DataType, S>> {
+	const values = (await zarr.open(elem.resolve("values"), {
+		kind: "array",
+	})) as zarr.Array<zarr.DataType, S>;
+	const mask = (await zarr.open(elem.resolve("mask"), {
+		kind: "array",
+	})) as zarr.Array<"bool", S>;
+	// Only nullable-string-array may specify na-value; "NA" is the default.
+	const naValue: NaValue = elem.attrs["na-value"] === "NaN" ? "NaN" : "NA";
+	return new LazyNullableArray(values, mask, naValue);
 }
 
 function readDict_010<S extends Readable>(
@@ -62,7 +84,7 @@ function readDict_010<S extends Readable>(
 
 async function readCategorical_noVersion<
 	S extends Readable,
-	K extends UIntType,
+	K extends CodeType,
 	D extends zarr.DataType,
 >(
 	location: Group<S>,
@@ -93,7 +115,8 @@ type ReadFunctionVersioned = <S extends Readable>(
 	elem: Group<S> & Elem<S>,
 ) =>
 	| AxisArrays<S>
-	| Promise<LazyCategoricalArray<UIntType, zarr.DataType, S>>
+	| Promise<LazyCategoricalArray<CodeType, zarr.DataType, S>>
+	| Promise<LazyNullableArray<zarr.DataType, S>>
 	| Promise<SparseArray<NumberDataType, IndexType, S>>;
 
 const IO_FUNC_REGISTRY_WITH_VERSION: {
@@ -102,6 +125,9 @@ const IO_FUNC_REGISTRY_WITH_VERSION: {
 	"csr_matrix,0.1.0": readSparse_010,
 	"csc_matrix,0.1.0": readSparse_010,
 	"categorical,0.2.0": readCategorical_020,
+	"nullable-integer,0.1.0": readNullable_010,
+	"nullable-boolean,0.1.0": readNullable_010,
+	"nullable-string-array,0.1.0": readNullable_010,
 	"dict,0.1.0": readDict_010,
 	"dataframe,0.1.0": readDict_010,
 	"dataframe,0.2.0": readDict_010,
@@ -114,8 +140,9 @@ export async function readZarr<S extends Readable>(
 	const adataInit = {} as AxisKeyTypes<S, NumberDataType, IndexType>;
 	await Promise.all(
 		AxisKeys.map(async (k) => {
-			if ((k === "X" && (await has(root, k))) || k !== "X") {
-				adataInit[k] = await readElem(root, k);
+			// Older versions of anndata may not have written all keys.
+			if (await has(root, k)) {
+				(adataInit as Record<AxisKey, unknown>)[k] = await readElem(root, k);
 			}
 		}),
 	);
@@ -134,7 +161,8 @@ export async function readElem<S extends Readable>(
 	key: string,
 ): Promise<
 	| SparseArray<NumberDataType, IndexType, S>
-	| LazyCategoricalArray<UIntType, zarr.DataType, S>
+	| LazyCategoricalArray<CodeType, zarr.DataType, S>
+	| LazyNullableArray<zarr.DataType, S>
 	| zarr.Array<zarr.DataType, S>
 >;
 export async function readElem<S extends Readable>(
@@ -142,7 +170,8 @@ export async function readElem<S extends Readable>(
 	key: string,
 ): Promise<
 	| SparseArray<NumberDataType, IndexType, S>
-	| LazyCategoricalArray<UIntType, zarr.DataType, S>
+	| LazyCategoricalArray<CodeType, zarr.DataType, S>
+	| LazyNullableArray<zarr.DataType, S>
 	| zarr.Array<zarr.DataType, S>
 	| AxisArrays<S>
 > {
@@ -158,7 +187,7 @@ export async function readElem<S extends Readable>(
 			return readCategorical_noVersion(
 				location,
 				key,
-				keyNode as zarr.Array<UIntType, S>,
+				keyNode as zarr.Array<CodeType, S>,
 			);
 		}
 	}

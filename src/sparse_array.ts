@@ -6,7 +6,7 @@ import type {
 	IndexType,
 	Slice,
 } from "./types.js";
-import { CONSTRUCTORS } from "./utils.js";
+import { get_ctr } from "./utils.js";
 
 class IndexingError {
 	public message: string;
@@ -87,14 +87,14 @@ class SparseArray<
 		// Create data to be returned
 		const isDataAllZeros = start === stop;
 		const dense = (
-			new CONSTRUCTORS[this.data.dtype.toString() as keyof typeof CONSTRUCTORS](
+			new (get_ctr(this.data.dtype) as zarr.TypedArrayConstructor<D>)(
 				shape.reduce((a, b) => a * b, 1),
 			) as TypedArray<D>
 		).fill(0);
 		const arr = await zarr.create(new Map(), {
 			shape,
-			chunk_shape: shape,
-			data_type: this.data.dtype,
+			chunkShape: shape,
+			dtype: this.data.dtype,
 		});
 
 		// Return empty or fill
