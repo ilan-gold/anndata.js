@@ -212,6 +212,24 @@ describe("AnnData i/o", () => {
 //   test_in_memory("dense")
 // })
 
+describe("readZarr with missing keys", () => {
+	it("leaves missing axis keys undefined", async () => {
+		const missing = ["obsp", "varp", "layers", "varm"];
+		const fixture = (anndata_0_10_CsrFixture as [string, string][]).filter(
+			([path]) => !missing.some((k) => path.startsWith(`/${k}/`)),
+		);
+		const store = createStoreFromMapContents(fixture);
+		const adata = await readZarr(store as Readable);
+		expect(adata.obsp).toBeUndefined();
+		expect(adata.varp).toBeUndefined();
+		expect(adata.layers).toBeUndefined();
+		expect(adata.varm).toBeUndefined();
+		expect(adata.obs).toBeInstanceOf(AxisArrays);
+		expect(adata.obsm).toBeInstanceOf(AxisArrays);
+		expect(adata.X).toBeInstanceOf(SparseArray);
+	});
+});
+
 describe("readElem", () => {
 	it("reset obs", async () => {
 		const store = createStoreFromMapContents(

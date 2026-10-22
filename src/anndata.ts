@@ -10,14 +10,14 @@ export default class AnnData<
 	D extends NumberDataType,
 	I extends IndexType,
 > {
-	public obs: AxisArrays<S>;
-	public var: AxisArrays<S>;
-	public obsm: AxisArrays<S>;
-	public obsp: AxisArrays<S>;
-	public varm: AxisArrays<S>;
-	public varp: AxisArrays<S>;
+	public obs: AxisArrays<S> | undefined;
+	public var: AxisArrays<S> | undefined;
+	public obsm: AxisArrays<S> | undefined;
+	public obsp: AxisArrays<S> | undefined;
+	public varm: AxisArrays<S> | undefined;
+	public varp: AxisArrays<S> | undefined;
 	public X: SparseArray<D, I, S> | zarr.Array<D> | undefined;
-	public layers: AxisArrays<S>;
+	public layers: AxisArrays<S> | undefined;
 
 	constructor(data: AxisKeyTypes<S, D, I>) {
 		this.obs = data.obs;
@@ -36,11 +36,17 @@ export default class AnnData<
 	}
 
 	public async obsNames() {
+		if (this.obs === undefined) {
+			throw new Error("AnnData object has no obs");
+		}
 		const grp = await this.obs.axisRoot();
 		return this.names(grp);
 	}
 
 	public async varNames() {
+		if (this.var === undefined) {
+			throw new Error("AnnData object has no var");
+		}
 		const grp = await this.var.axisRoot();
 		return this.names(grp);
 	}

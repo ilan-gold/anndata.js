@@ -140,8 +140,9 @@ export async function readZarr<S extends Readable>(
 	const adataInit = {} as AxisKeyTypes<S, NumberDataType, IndexType>;
 	await Promise.all(
 		AxisKeys.map(async (k) => {
-			if ((k === "X" && (await has(root, k))) || k !== "X") {
-				adataInit[k] = await readElem(root, k);
+			// Older versions of anndata may not have written all keys.
+			if (await has(root, k)) {
+				(adataInit as Record<AxisKey, unknown>)[k] = await readElem(root, k);
 			}
 		}),
 	);

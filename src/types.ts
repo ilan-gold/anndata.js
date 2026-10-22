@@ -44,12 +44,12 @@ export interface AxisKeyTypes<
 	D extends zarr.NumberDataType,
 	I extends IndexType,
 > {
-	obs: AxisArrays<S>;
-	var: AxisArrays<S>;
-	obsm: AxisArrays<S>;
-	varm: AxisArrays<S>;
-	X: SparseArray<D, I, S> | zarr.Array<D, S> | undefined;
-	layers: AxisArrays<S>;
-	obsp: AxisArrays<S>;
-	varp: AxisArrays<S>;
+	obs?: AxisArrays<S>;
+	var?: AxisArrays<S>;
+	obsm?: AxisArrays<S>;
+	varm?: AxisArrays<S>;
+	X?: SparseArray<D, I, S> | zarr.Array<D, S>;
+	layers?: AxisArrays<S>;
+	obsp?: AxisArrays<S>;
+	varp?: AxisArrays<S>;
 }
