@@ -18,7 +18,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-
   Build:
     runs-on: ubuntu-latest
     steps:
