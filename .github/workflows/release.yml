@@ -10,17 +10,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+      - run: npm install -g npm@latest
       - run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run build
-          pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm stage publish
