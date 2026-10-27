@@ -34,7 +34,12 @@
 		},
 	],
 	"files": {
-		"includes": ["**", "!**/fixtures", "!**/package.json"],
+		"includes": [
+			"**",
+			"!**/fixtures",
+			"!**/package.json",
+			"!**/pnpm-lock.yaml",
+		],
 	},
 	"vcs": {
 		"enabled": true,
